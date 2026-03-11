@@ -27,19 +27,23 @@ class Plotter:
         
         plt.pause(self.interval)
 
+    def finish(self):
+        plt.show()
+
     def _plot_2d(self, model):
-        self.ax_data.set_title("Decision Boundary")
-        x_min, x_max = np.min(self.X[:, 0])-1, np.max(self.X[:, 0])+1
-        y_min, y_max = np.min(self.X[:, 1])-1, np.max(self.X[:, 1])+1
+        self.ax_data.set_title("2D: Non-linear Decision Boundary")
         
-        xx, yy = np.meshgrid(np.linspace(x_min, x_max, 128), np.linspace(y_min, y_max, 128))
+        xx, yy = np.meshgrid(np.linspace(-1, 1, 128), np.linspace(-1, 1, 128))
         grid_points = np.c_[xx.ravel(), yy.ravel()]
         
-        probs = model.predict(grid_points) 
-        probs = probs.reshape(xx.shape)
+        probs = model.predict(grid_points)
+        
+        probs_class1 = probs[:, 1]
+        
+        predicted_grid = probs_class1.reshape(xx.shape)
 
-        # 50% 境界線
-        self.ax_data.contourf(xx, yy, probs, alpha=0.3, cmap='bwr', levels=np.linspace(0, 1, 11))
-        self.ax_data.contour(xx, yy, probs, levels=[0.5], colors='green', linewidths=2)
+        self.ax_data.contourf(xx, yy, predicted_grid, alpha=0.3, cmap='bwr', levels=np.linspace(0, 1, 11))
+        
+        self.ax_data.contour(xx, yy, predicted_grid, levels=[0.5], colors='green', linewidths=2)
         
         self.ax_data.scatter(self.X[:, 0], self.X[:, 1], c=self.Y, cmap='bwr', edgecolors='k')

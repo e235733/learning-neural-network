@@ -8,7 +8,7 @@ class NeuralNetworkModel:
 
         #各層のニューロンの数
         self.input_dim = self.X.shape[1]
-        self.hidden_dim = 4
+        self.hidden_dim = 6
         self.output_dim = 2
 
         # Y は one_hot 表現にする
@@ -16,8 +16,8 @@ class NeuralNetworkModel:
 
         #調整すべきパラメータb:切片、w:d次元分の傾きを作成
         rng = np.random.default_rng()
-        self.W1 = rng.standard_normal((self.input_dim, self.hidden_dim)) * 0.1
-        self.W2 = rng.standard_normal((self.hidden_dim, self.output_dim)) * 0.1
+        self.W1 = rng.standard_normal((self.input_dim, self.hidden_dim)) * 0.7
+        self.W2 = rng.standard_normal((self.hidden_dim, self.output_dim)) * 0.7
         self.b1 = np.zeros(self.hidden_dim)
         self.b2 = np.zeros(self.output_dim)
         #bとwの学習率
@@ -28,7 +28,7 @@ class NeuralNetworkModel:
     
     def calc_loss(self):
         #損失評価
-        logP = np.log(self.P)
+        logP = np.log(self.P + 1e-7)
         loss = -np.sum(self.Y * logP) / self.N
         print("loss: ", loss)
         self.loss_history.append(loss)
@@ -54,14 +54,14 @@ class NeuralNetworkModel:
         self.calc_A1()
         self.calc_P()
 
-        da1 = (self.P - self.Y) @ self.W2.T / self.N
-        dz1 = (self.A1 - self.A1*self.A1) * da1
-        self.dw1 = self.X.T @ dz1
-        self.db1 = np.sum(dz1,axis=0)
-
         dz2 = (self.P - self.Y) / self.N
         self.dw2 = self.A1.T @ dz2
         self.db2 = np.sum(dz2,axis=0)
+
+        da1 = dz2 @ self.W2.T
+        dz1 = (self.A1 - self.A1*self.A1) * da1
+        self.dw1 = self.X.T @ dz1
+        self.db1 = np.sum(dz1,axis=0)
 
     def shift(self):
         # 勾配を計算
