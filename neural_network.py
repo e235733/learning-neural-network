@@ -33,17 +33,22 @@ class NeuralNetworkModel:
         print("loss: ", loss)
         self.loss_history.append(loss)
 
+    def _sigmoid(self,Z):
+        exp = np.exp(-Z)
+        return 1 / (exp + 1)
+
     def calc_A1(self):
         Z1 = self.X @ self.W1 + self.b1
-        Z1_max = np.max(Z1, axis=1, keepdims=True)
-        exp_Z1 = np.exp(Z1 - Z1_max)
-        self.A1 = exp_Z1 / (exp_Z1 + 1)
+        self.A1 = self._sigmoid(Z1)
+
+    def _softmax(self,Z):
+        Z_max = np.max(Z, axis=1, keepdims=True)
+        exp_Z = np.exp(Z - Z_max)
+        return exp_Z / np.sum(exp_Z,axis=1,keepdims=True)
 
     def calc_P(self):
         Z2 = self.A1 @ self.W2 + self.b2
-        Z2_max = np.max(Z2, axis=1, keepdims=True)
-        exp_Z2 = np.exp(Z2 - Z2_max)
-        self.P = exp_Z2 / np.sum(exp_Z2,axis=1,keepdims=True)
+        self.P = self._softmax(Z2)
 
     def grad(self):
         self.calc_A1()
@@ -67,6 +72,12 @@ class NeuralNetworkModel:
         self.W2 -= self.eta * self.dw2
         self.b1 -= self.eta * self.db1
         self.b2 -= self.eta * self.db2
+
+    def predict(self,X):
+        Z1 = X @ self.W1 + self.b1
+        A1 = self._sigmoid(Z1) 
+        Z2 = A1 @ self.W2 + self.b2
+        return self._softmax(Z2)            
 
 
     
