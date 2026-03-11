@@ -1,0 +1,6 @@
+# キャッシュ
+__pycache__/
+.vscode/
+
+# Mac
+.DS_Store
