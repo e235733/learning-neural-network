@@ -6,10 +6,11 @@ import numpy as np
 
 def main():
 
-    NUM_STEPS = 2000
-    ETA = 2
+    NUM_DATA = 250
+    NUM_STEPS = 20000
+    ETA = 3
 
-    data = XorDataset(250)
+    data = XorDataset(NUM_DATA)
 
     model = NeuralNetworkModel(data.X, data.Y, ETA)
 
@@ -18,8 +19,9 @@ def main():
     for step in range(NUM_STEPS):
         model.shift()
         model.calc_loss()
-        if step % 20 == 0:
+        if step % 100 == 0:
             plotter.show(model)
+    plotter.show(model)
 
     # 正解率の計算
     Y_pred = np.argmax(model.P, axis=1)
