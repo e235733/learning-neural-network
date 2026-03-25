@@ -10,16 +10,16 @@ def main():
     NUM_DATA = 250
     NUM_STEPS = 10000
 
-    HiddenLayer = [8,8,8,8]
-    ETA = 2
+    ACT_FUNCTION = fn.ReLU()
+    HIDDEN_LAYER = [8,8,8,8]
+    ETA = 0.1
 
-    IS_DETAIL_MODE = False
+    IS_DETAIL_MODE = True
 
-    act_fn = fn.Sigmoid()
 
     data = XorDataset(NUM_DATA)
 
-    model = NeuralNetworkModel(data.X, data.Y, HiddenLayer, ETA, act_fn)
+    model = NeuralNetworkModel(data.X, data.Y, HIDDEN_LAYER, ETA, ACT_FUNCTION)
 
     plotter = Plotter(0.1, data.X, data.Y, IS_DETAIL_MODE)
 

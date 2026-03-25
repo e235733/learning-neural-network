@@ -72,11 +72,10 @@ class NeuralNetworkModel:
     def calc_A(self):
         # Aは勾配計算に使うだけなので保存せずに出力
         fn = self.act_fn
-        A = [self.norm_X]
+        self.A = [self.norm_X]
         for i in range(self.dep):
-            Z = A[i] @ self.W[i] + self.b[i]
-            A.append(fn.value(Z))
-        return A
+            Z = self.A[i] @ self.W[i] + self.b[i]
+            self.A.append(fn.value(Z))
 
     def upd_P(self, A):
         # Pは損失評価にも使うのでインスタンス変数として保存
@@ -99,20 +98,20 @@ class NeuralNetworkModel:
 
 
     def grad(self):
-        A = self.calc_A()
-        self.upd_P(A)
+        self.calc_A()
+        self.upd_P(self.A)
         dZ = []
 
         dz = (self.P - self.Y) / self.N
         dZ.append(dz)
         for i in range(self.dep, 0, -1):
             da = dz @ self.W[i].T
-            diff = self.act_fn.diff(A[i])
+            diff = self.act_fn.diff(self.A[i])
             dz = diff * da
             dZ.append(dz)
         dZ.reverse()
 
-        self.upd_dW_db(A, dZ)
+        self.upd_dW_db(self.A, dZ)
 
     def new_W(self, i):
         return self.W[i] - self.eta * self.dW[i]
