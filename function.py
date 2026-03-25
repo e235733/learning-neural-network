@@ -4,7 +4,7 @@ import numpy as np
 class Function(ABC):
 
     @abstractmethod
-    def initialization(self, head, tail):
+    def initialization(self, head: int, tail: int) -> float:
         pass
 
     @abstractmethod

@@ -148,14 +148,18 @@ class NeuralNetworkModel:
     
 if __name__ == "__main__":
     from xor_dataset import XorDataset
+    import function as fn
 
     ETA = 0.1
+    STRUCT = [4, 4]
+
+    ACT_FN = fn.Sigmoid()
 
     data = XorDataset(10)
     print("data X, Y:")
     print(data.X)
     print(data.Y)
-    model = NeuralNetworkModel(explain=data.X, depend=data.Y, eta=ETA)
+    model = NeuralNetworkModel(explain=data.X, depend=data.Y, struct=STRUCT, eta=ETA, act_fn=ACT_FN)
     
     print(model.W)
     model.shift()
