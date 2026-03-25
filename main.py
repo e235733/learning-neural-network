@@ -1,4 +1,6 @@
 from xor_dataset import XorDataset
+from sklearn_datasets import MoonsDataset, GaussianQuantilesDataset
+
 from plotter import Plotter
 from neural_network import NeuralNetworkModel
 import function as fn
@@ -10,15 +12,15 @@ def main():
     NUM_DATA = 250
     NUM_STEPS = 10000
 
-    ACT_FUNCTION = fn.ReLU()
-    HIDDEN_LAYER = [8,8,8,8]
+    ACT_FUNCTION = fn.LeakyReLU()
+    HIDDEN_LAYER = [8, 8, 8, 8]
     ETA = 0.1
 
     #チェック時やデバッグ時はTrue
     IS_DETAIL_MODE = False
 
 
-    data = XorDataset(NUM_DATA)
+    data = GaussianQuantilesDataset(NUM_DATA)
 
     model = NeuralNetworkModel(data.X, data.Y, HIDDEN_LAYER, ETA, ACT_FUNCTION)
 
