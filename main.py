@@ -1,6 +1,5 @@
 from xor_dataset import XorDataset
 from plotter import Plotter
-from plotter_check import CheckPlotter
 from neural_network import NeuralNetworkModel
 
 import numpy as np
@@ -14,17 +13,11 @@ def main():
     NUM_STEPS = 10000
     ETA = 2
 
-    ACT_FUNCTION = 1
-
-
     data = XorDataset(NUM_DATA)
 
     model = NeuralNetworkModel(data.X, data.Y,[6,6], ETA)
 
-    if RUN_MODE == 1:
-        plotter = Plotter(0.1, data.X, data.Y)
-    else:
-        plotter = CheckPlotter(0.1, data.X, data.Y)
+    plotter = Plotter(0.1, data.X, data.Y)
 
     for step in range(NUM_STEPS):
         model.shift()
