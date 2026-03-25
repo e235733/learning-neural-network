@@ -26,7 +26,7 @@ def main():
     for step in range(NUM_STEPS):
         model.shift()
         model.calc_loss()
-        if step % 200 == 0:
+        if step % 400 == 0:
             plotter.show(model)
             loss = model.loss()
             print("loss: ", loss)
