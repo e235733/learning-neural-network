@@ -20,7 +20,7 @@ def main():
     IS_DETAIL_MODE = False
 
 
-    data = GaussianQuantilesDataset(NUM_DATA)
+    data = MoonsDataset(NUM_DATA)
 
     model = NeuralNetworkModel(data.X, data.Y, HIDDEN_LAYER, ETA, ACT_FUNCTION)
 
