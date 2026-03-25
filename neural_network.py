@@ -66,7 +66,8 @@ class NeuralNetworkModel:
     def _softmax(self,Z):
         Z_max = np.max(Z, axis=1, keepdims=True)
         exp_Z = np.exp(Z - Z_max)
-        return exp_Z / np.sum(exp_Z,axis=1,keepdims=True)
+        sum = np.sum(exp_Z,axis=1,keepdims=True)
+        return exp_Z / (sum + 1e-15)
 
     
     def calc_A(self):
@@ -83,14 +84,21 @@ class NeuralNetworkModel:
         L = self.dep
         Z = A[L] @ self.W[L] + self.b[L]
         self.P = self._softmax(Z)
-    
 
     def upd_dW_db(self, A, dZ):
+        threshold = 2.0
         _dW = []
         _db = []
         L = self.dep
         for i in range(L+1):
             dw = A[i].T @ dZ[i]
+            
+            # L2ノルム（ベクトルの長さ）を計算
+            norm_w = np.linalg.norm(dw)
+            # ノルムが閾値を超えていたら、向きを保って縮小させる
+            if norm_w > threshold:
+                dw = dw * (threshold / norm_w)
+            
             _dW.append(dw)
             db = np.sum(dZ[i], axis=0)
             _db.append(db)
