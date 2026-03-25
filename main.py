@@ -1,26 +1,39 @@
 from xor_dataset import XorDataset
 from plotter import Plotter
+from plotter_check import CheckPlotter
 from neural_network import NeuralNetworkModel
 
 import numpy as np
 
 def main():
 
+    #普通の実行なら1,デバッグやチェック時は2を選択
+    RUN_MODE = 2
+
     NUM_DATA = 250
-    NUM_STEPS = 20000
-    ETA = 3
+    NUM_STEPS = 10000
+    ETA = 2
+
+    ACT_FUNCTION = 1
+
 
     data = XorDataset(NUM_DATA)
 
-    model = NeuralNetworkModel(data.X, data.Y, ETA)
+    model = NeuralNetworkModel(data.X, data.Y,[6,6], ETA)
 
-    plotter = Plotter(0.1, data.X, data.Y)
+    if RUN_MODE == 1:
+        plotter = Plotter(0.1, data.X, data.Y)
+    else:
+        plotter = CheckPlotter(0.1, data.X, data.Y)
 
     for step in range(NUM_STEPS):
         model.shift()
         model.calc_loss()
-        if step % 100 == 0:
+        if step % (200 * RUN_MODE) == 0:
             plotter.show(model)
+            if RUN_MODE == 2:
+                loss = model.loss()
+                print("loss: ", loss)
     plotter.show(model)
 
     # 正解率の計算
