@@ -14,7 +14,8 @@ def main():
     HIDDEN_LAYER = [8,8,8,8]
     ETA = 0.1
 
-    IS_DETAIL_MODE = True
+    #チェック時やデバッグ時はTrue
+    IS_DETAIL_MODE = False
 
 
     data = XorDataset(NUM_DATA)
