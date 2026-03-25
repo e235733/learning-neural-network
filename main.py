@@ -13,13 +13,15 @@ def main():
     HiddenLayer = [8,8,8,8]
     ETA = 2
 
+    IS_DETAIL_MODE = False
+
     act_fn = fn.Sigmoid()
 
     data = XorDataset(NUM_DATA)
 
     model = NeuralNetworkModel(data.X, data.Y, HiddenLayer, ETA, act_fn)
 
-    plotter = Plotter(0.1, data.X, data.Y)
+    plotter = Plotter(0.1, data.X, data.Y, IS_DETAIL_MODE)
 
     for step in range(NUM_STEPS):
         model.shift()

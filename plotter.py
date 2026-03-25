@@ -2,16 +2,41 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 class Plotter:
-    def __init__(self, interval, X, Y):
+    def __init__(self, interval, X, Y, is_detail_mode=False):
         self.interval = interval
         self.X = X
         self.Y = np.argmax(Y, axis=1) if Y.ndim > 1 else Y
+        self.is_detail_mode = is_detail_mode
         
-        self.fig, self.axs = plt.subplots(2, 3, figsize=(12, 7))
-        plt.tight_layout()
-        plt.subplots_adjust(hspace=0.4, wspace=0.3, top=0.9)
+        if self.is_detail_mode:
+            self.fig, self.axs = plt.subplots(2, 3, figsize=(12, 7))
+            plt.tight_layout()
+            plt.subplots_adjust(hspace=0.4, wspace=0.3, top=0.9)
+        else: # 'detail'
+            self.fig = plt.figure(figsize=(12, 6))
+            self.ax_loss = self.fig.add_subplot(1, 2, 1)
+            self.ax_data = self.fig.add_subplot(1, 2, 2)
 
     def show(self, model):
+        if self.is_detail_mode:
+            self._show_detail(model)
+        else:
+            self._show_default(model)
+        
+        plt.pause(self.interval)
+
+    def _show_default(self, model):
+        self.ax_loss.cla()
+        self.ax_loss.plot(model.loss_history, color='purple', linewidth=2)
+        self.ax_loss.set_title("Learning Curve")
+        self.ax_loss.set_xlabel("Iteration")
+        self.ax_loss.set_ylabel("Loss")
+        self.ax_loss.grid(True)
+
+        self.ax_data.cla()
+        self._plot_2d(model, self.ax_data)
+
+    def _show_detail(self, model):
         ax_loss = self.axs[0, 0]
         ax_loss.cla()
         ax_loss.plot(model.loss_history, color='purple', linewidth=2)
@@ -37,11 +62,6 @@ class Plotter:
             grad_means = [np.mean(np.abs(dw)) for dw in model.dW]
             ax_dw.bar(layer_labels, grad_means, color='orange')
         ax_dw.set_title("Mean Gradient Magnitude (|dW|)")
-
-        # self.axs[1, 0].axis('off')
-        # self.axs[1, 1].axis('off')
-
-        plt.pause(self.interval)
 
     def finish(self):
         plt.show()
