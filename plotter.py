@@ -48,12 +48,21 @@ class Plotter:
         ax_data.cla()
         self._plot_2d(model, ax_data)
 
-        ax_w = self.axs[0, 2]
+        ax_w = self.axs[1, 0]
         ax_w.cla()
         for i, w in enumerate(model.W):
             ax_w.hist(w.flatten(), bins=30, alpha=0.5, label=f"Layer {i}")
         ax_w.set_title("Weight Distribution (W)")
         ax_w.legend()
+
+        ax_A = self.axs[1, 1]
+        ax_A.cla()
+        for i, a in enumerate(model.A):
+            if i == 0:
+                continue
+            ax_A.hist(a.flatten(), bins=30, alpha=0.5, label=f"Layer {i}")
+        ax_A.set_title("Activation Distribution (A)")
+        ax_A.legend()
 
         ax_dw = self.axs[1, 2]
         ax_dw.cla()
