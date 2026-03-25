@@ -84,8 +84,7 @@ class NeuralNetworkModel:
         Z = A[L] @ self.W[L] + self.b[L]
         self.P = self._softmax(Z)
 
-    def upd_dW_db(self, A, dZ):
-        threshold = 2.0
+    def upd_dW_db(self, A, dZ, threshold = 2.0):        
         _dW = []
         _db = []
         L = self.dep
