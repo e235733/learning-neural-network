@@ -7,9 +7,6 @@ import numpy as np
 
 def main():
 
-    #普通の実行なら1,デバッグやチェック時は2を選択
-    RUN_MODE = 2
-
     NUM_DATA = 250
     NUM_STEPS = 10000
 
@@ -17,7 +14,6 @@ def main():
     ETA = 2
 
     act_fn = fn.Sigmoid()
-
 
     data = XorDataset(NUM_DATA)
 
@@ -28,11 +24,10 @@ def main():
     for step in range(NUM_STEPS):
         model.shift()
         model.calc_loss()
-        if step % (200 * RUN_MODE) == 0:
+        if step % 200 == 0:
             plotter.show(model)
-            if RUN_MODE == 2:
-                loss = model.loss()
-                print("loss: ", loss)
+            loss = model.loss()
+            print("loss: ", loss)
     plotter.show(model)
 
     # 正解率の計算
