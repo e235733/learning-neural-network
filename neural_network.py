@@ -9,13 +9,13 @@ class NeuralNetworkModel:
     
     def para_generation(self,head,tail):
         rng = np.random.default_rng()
-        scale = np.sqrt(2 / (head + tail))
+        scale = self.act_fn.initialization(head, tail)
         w = rng.standard_normal((head, tail)) * scale
         b = np.zeros(tail)
         self.W.append(w)
         self.b.append(b)
 
-    def __init__(self,explain,depend,struct,eta):
+    def __init__(self,explain,depend,struct,eta,act_fn : fn.Function):
         #説明変数X(D×N), 目的変数Y(K×N)
         self.X = explain
         self.N = self.X.shape[0]
@@ -34,7 +34,8 @@ class NeuralNetworkModel:
         # Y は one_hot 表現にする
         self.Y = np.identity(self.output_dim)[depend]
 
-        #調整すべきパラメータb:切片(1×K),W:傾き(D×K)を隠れ層＋出力層の深さ(L+1)だけ作成       
+        #調整すべきパラメータb:切片(1×K),W:傾き(D×K)を隠れ層＋出力層の深さ(L+1)だけ作成
+        self.act_fn = act_fn       
         self.W = []
         self.b = []
         head = self.input_dim
@@ -47,21 +48,20 @@ class NeuralNetworkModel:
         #bとWの学習率
         self.eta = eta
         #グラフ作成用の損失記録
-        self.loss_history = []
+        self.loss_history = [] 
 
     def loss(self):
-        logP = np.log(self.P)
+    # Pが0や1にならないように極小値を挟む
+        eps = 1e-15
+        P_clipped = np.clip(self.P, eps, 1 - eps)
+        logP = np.log(P_clipped)
         loss = -np.sum(self.Y * logP) / self.N
-        return loss    
+        return loss  
  
     def calc_loss(self):
         #損失評価
         loss = self.loss()
         self.loss_history.append(loss)
-
-    def _sigmoid(self,Z):
-        exp = np.exp(-Z)
-        return 1 / (exp + 1)
     
     def _softmax(self,Z):
         Z_max = np.max(Z, axis=1, keepdims=True)
@@ -71,11 +71,11 @@ class NeuralNetworkModel:
     
     def calc_A(self):
         # Aは勾配計算に使うだけなので保存せずに出力
-        act_fn = fn.Sigmoid()
+        fn = self.act_fn
         A = [self.norm_X]
         for i in range(self.dep):
             Z = A[i] @ self.W[i] + self.b[i]
-            A.append(act_fn.value(Z))
+            A.append(fn.value(Z))
         return A
 
     def upd_P(self, A):
@@ -107,7 +107,8 @@ class NeuralNetworkModel:
         dZ.append(dz)
         for i in range(self.dep, 0, -1):
             da = dz @ self.W[i].T
-            dz = (A[i] - A[i]**2) * da
+            diff = self.act_fn.diff(A[i])
+            dz = diff * da
             dZ.append(dz)
         dZ.reverse()
 
@@ -138,7 +139,7 @@ class NeuralNetworkModel:
         A = self.norm(X, self.X_mean, self.X_std)       
         for i in range(self.dep):
             Z = A @ self.W[i] + self.b[i]
-            A = self._sigmoid(Z)
+            A = self.act_fn.value(Z)
         i = self.dep
         Z = A @ self.W[i] + self.b[i]
         return self._softmax(Z)

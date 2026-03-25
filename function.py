@@ -4,14 +4,20 @@ import numpy as np
 class Function(ABC):
 
     @abstractmethod
-    def value(self):
+    def initialization(self, head, tail):
         pass
 
     @abstractmethod
-    def diff(self):
+    def value(self, X):
+        pass
+
+    @abstractmethod
+    def diff(self, Y):
         pass
 
 class Sigmoid(Function):
+    def initialization(self, head, tail):
+        return np.sqrt(2 / (head + tail))
 
     def value(self, X):
         exp = np.exp(-X)
@@ -19,3 +25,23 @@ class Sigmoid(Function):
     
     def diff(self, Y):
         return Y - Y**2
+    
+class ReLU(Function):
+    def initialization(self, head, tail):
+        return np.sqrt(2 / head)
+    
+    def value(self, X):
+        return np.where(X >= 0, X, -1e-15)
+    
+    def diff(self, Y):
+        return np.where(Y >= 0, 1, 0)
+    
+class LeakyReLU(Function):
+    def initialization(self, head, tail):
+        return np.sqrt(2 / head)
+    
+    def value(self, X):
+        return np.where(X >= 0, X, -0.01*X)
+    
+    def diff(self, Y):
+        return np.where(Y >= 0, 1, -0.01)

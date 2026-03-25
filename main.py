@@ -1,6 +1,7 @@
 from xor_dataset import XorDataset
 from plotter import Plotter
 from neural_network import NeuralNetworkModel
+import function as fn
 
 import numpy as np
 
@@ -11,11 +12,16 @@ def main():
 
     NUM_DATA = 250
     NUM_STEPS = 10000
+
+    HiddenLayer = [8,8,8,8]
     ETA = 2
+
+    act_fn = fn.Sigmoid()
+
 
     data = XorDataset(NUM_DATA)
 
-    model = NeuralNetworkModel(data.X, data.Y,[6,6], ETA)
+    model = NeuralNetworkModel(data.X, data.Y, HiddenLayer, ETA, act_fn)
 
     plotter = Plotter(0.1, data.X, data.Y)
 
