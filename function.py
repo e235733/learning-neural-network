@@ -43,7 +43,7 @@ class ReLU(Function):
         return np.sqrt(2 / head)
     
     def value(self, X):
-        return np.maximum(1e-15, X)
+        return np.maximum(-1e-15, X)
     
     def diff(self, Y):
         return (Y >= 0).astype(float)
