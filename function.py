@@ -20,13 +20,15 @@ class Sigmoid(Function):
         return np.sqrt(2 / (head + tail))
 
     def value(self, X):
-        exp = np.exp(-X)
+        # 警告を防ぐため、-250 から 250 の範囲にクリッピング（速度アップと安定化）
+        X_clipped = np.clip(X, -250, 250)
+        exp = np.exp(-X_clipped)
         return 1 / (exp + 1)
     
     def diff(self, Y):
         return Y - Y**2
     
-class tanh(Function):
+class Tanh(Function):
     def initialization(self, head, tail):
         return np.sqrt(2 / (head + tail))
 
@@ -41,10 +43,10 @@ class ReLU(Function):
         return np.sqrt(2 / head)
     
     def value(self, X):
-        return np.where(X >= 0, X, -1e-15)
+        return np.maximum(1e-15, X)
     
     def diff(self, Y):
-        return np.where(Y >= 0, 1, 0)
+        return (Y >= 0).astype(float)
     
 class LeakyReLU(Function):
     def __init__(self, alpha=0.01):
@@ -54,10 +56,14 @@ class LeakyReLU(Function):
         return np.sqrt(2 / head)
     
     def value(self, X):
-        return np.where(X >= 0, X, X * self.alpha)
+        return np.maximum(X, X * self.alpha)
     
     def diff(self, Y):
-        return np.where(Y >= 0, 1, self.alpha)
+        # Yが0より大きければ1.0、小さければalphaの配列を作る
+        # np.ones_like で Y と同じ形の 1.0 の配列を作り、0以下の場所を alpha で上書きします
+        d = np.ones_like(Y)
+        d[Y < 0] = self.alpha
+        return d
 
 
 
@@ -83,8 +89,8 @@ class Softmax(OutputFunction):
     def value(self, X):
         X_max = np.max(X, axis=1, keepdims=True)
         exp_X = np.exp(X - X_max)
-        sum = np.sum(exp_X,axis=1,keepdims=True)
-        return exp_X / (sum + 1e-15)
+        sum_exp = np.sum(exp_X,axis=1,keepdims=True)
+        return exp_X / (sum_exp + 1e-15)
     
     def Loss(self, P, Y):
         # Pが0や1にならないように極小値を挟む        
