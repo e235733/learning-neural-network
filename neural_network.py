@@ -15,7 +15,7 @@ class NeuralNetworkModel:
         self.W.append(w)
         self.b.append(b)
 
-    def __init__(self,explain,depend,struct,eta,act_fn : fn.Function):
+    def __init__(self, explain:np, depend:np, struct, eta, fn_box:fn.FunctionBox):
         #説明変数X(D×N), 目的変数Y(K×N)
         self.X = explain
         self.N = self.X.shape[0]
@@ -35,7 +35,8 @@ class NeuralNetworkModel:
         self.Y = np.identity(self.output_dim)[depend]
 
         #調整すべきパラメータb:切片(1×K),W:傾き(D×K)を隠れ層＋出力層の深さ(L+1)だけ作成
-        self.act_fn = act_fn       
+        self.act_fn = fn_box.act
+        self.output_fn = fn_box.output     
         self.W = []
         self.b = []
         head = self.input_dim
@@ -51,38 +52,29 @@ class NeuralNetworkModel:
         self.loss_history = [] 
 
     def loss(self):
-    # Pが0や1にならないように極小値を挟む
-        eps = 1e-15
-        P_clipped = np.clip(self.P, eps, 1 - eps)
-        logP = np.log(P_clipped)
-        loss = -np.sum(self.Y * logP) / self.N
-        return loss  
+        o_fn = self.output_fn
+        return o_fn.Loss(self.P, self.Y)
  
     def calc_loss(self):
         #損失評価
         loss = self.loss()
         self.loss_history.append(loss)
-    
-    def _softmax(self,Z):
-        Z_max = np.max(Z, axis=1, keepdims=True)
-        exp_Z = np.exp(Z - Z_max)
-        sum = np.sum(exp_Z,axis=1,keepdims=True)
-        return exp_Z / (sum + 1e-15)
 
     
-    def calc_A(self):
-        # Aは勾配計算に使うだけなので保存せずに出力
+    def upd_A(self):
+        # Aも確認可能なようにインスタンス変数に保存
         fn = self.act_fn
         self.A = [self.norm_X]
         for i in range(self.dep):
             Z = self.A[i] @ self.W[i] + self.b[i]
             self.A.append(fn.value(Z))
 
-    def upd_P(self, A):
+    def upd_P(self):
         # Pは損失評価にも使うのでインスタンス変数として保存
+        o_fn = self.output_fn
         L = self.dep
-        Z = A[L] @ self.W[L] + self.b[L]
-        self.P = self._softmax(Z)
+        Z = self.A[L] @ self.W[L] + self.b[L]
+        self.P = o_fn.value(Z)
 
     def upd_dW_db(self, A, dZ, threshold = 2.0):        
         _dW = []
@@ -105,11 +97,11 @@ class NeuralNetworkModel:
 
 
     def grad(self):
-        self.calc_A()
-        self.upd_P(self.A)
+        self.upd_A()
+        self.upd_P()
         dZ = []
 
-        dz = (self.P - self.Y) / self.N
+        dz = self.output_fn.dLoss(self.P, self.Y)
         dZ.append(dz)
         for i in range(self.dep, 0, -1):
             da = dz @ self.W[i].T
@@ -148,7 +140,7 @@ class NeuralNetworkModel:
             A = self.act_fn.value(Z)
         i = self.dep
         Z = A @ self.W[i] + self.b[i]
-        return self._softmax(Z)
+        return self.output_fn.value(Z)
 
 
     
@@ -166,7 +158,9 @@ if __name__ == "__main__":
     print(data.X)
     print(data.Y)
     model = NeuralNetworkModel(explain=data.X, depend=data.Y, struct=STRUCT, eta=ETA, act_fn=ACT_FN)
-    
+
     print(model.W)
     model.shift()
     print(model.W)
+    print("model A")
+    print(model.A)

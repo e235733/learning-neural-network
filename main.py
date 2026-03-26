@@ -12,17 +12,19 @@ def main():
     NUM_DATA = 250
     NUM_STEPS = 10000
 
-    ACT_FUNCTION = fn.LeakyReLU()
+    ACT_FUNCTION = fn.tanh()
+    OUTPUT_FUNCTION = fn.Softmax(NUM_DATA)
     HIDDEN_LAYER = [8, 8, 8, 8]
-    ETA = 0.1
+    ETA = 0.05
 
     #チェック時やデバッグ時はTrue
-    IS_DETAIL_MODE = False
+    IS_DETAIL_MODE = True
 
 
-    data = MoonsDataset(NUM_DATA)
+    data = XorDataset(NUM_DATA)
 
-    model = NeuralNetworkModel(data.X, data.Y, HIDDEN_LAYER, ETA, ACT_FUNCTION)
+    fn_box = fn.FunctionBox(ACT_FUNCTION, OUTPUT_FUNCTION)
+    model = NeuralNetworkModel(data.X, data.Y, HIDDEN_LAYER, ETA, fn_box)
 
     plotter = Plotter(0.1, data.X, data.Y, IS_DETAIL_MODE)
 
