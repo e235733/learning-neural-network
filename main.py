@@ -12,7 +12,7 @@ def main():
     NUM_DATA = 250
     NUM_STEPS = 10000
 
-    ACT_FUNCTION = fn.tanh()
+    ACT_FUNCTION = fn.Tanh()
     OUTPUT_FUNCTION = fn.Softmax(NUM_DATA)
     HIDDEN_LAYER = [8, 8, 8, 8]
     ETA = 0.05
@@ -21,7 +21,7 @@ def main():
     IS_DETAIL_MODE = True
 
 
-    data = XorDataset(NUM_DATA)
+    data = MoonsDataset(NUM_DATA)
 
     fn_box = fn.FunctionBox(ACT_FUNCTION, OUTPUT_FUNCTION)
     model = NeuralNetworkModel(data.X, data.Y, HIDDEN_LAYER, ETA, fn_box)
@@ -31,7 +31,7 @@ def main():
     for step in range(NUM_STEPS):
         model.shift()
         model.calc_loss()
-        if step % 400 == 0:
+        if step % 500 == 0:
             plotter.show(model)
             loss = model.loss()
             print("loss: ", loss)
