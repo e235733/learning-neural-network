@@ -46,7 +46,13 @@ class NeuralNetworkModel:
         tail = self.output_dim
         self.para_generation(head, tail)
 
-        #bとWの学習率
+        #新しく Momentum 用の変数として速度 V (Velocity) を追加
+        # W と b と同じ形状のゼロ配列（速度）を作成
+        self.V_W = [np.zeros_like(w) for w in self.W]
+        self.V_b = [np.zeros_like(b) for b in self.b]
+        self.alpha = 0.5 # 慣性係数（過去の勢いを50%引き継ぐ）
+
+        # b と W の学習率
         self.eta = eta
         #グラフ作成用の損失記録
         self.loss_history = [] 
@@ -111,10 +117,17 @@ class NeuralNetworkModel:
         self.upd_dW_db(self.A, dZ)
 
     def new_W(self, i):
-        return self.W[i] - self.eta * self.dW[i]
+        # 速度 V_W の更新: V = α*V - η*dW
+        self.V_W[i] = self.alpha * self.V_W[i] - self.eta * self.dW[i]
+        # 重み W の更新: W = W + V
+        _new_W = self.W[i] + self.V_W[i]
+        return _new_W
     
     def new_b(self, i):
-        return self.b[i] - self.eta * self.db[i]
+        # バイアス b も同様に速度 V_b を更新
+        self.V_b[i] = self.alpha * self.V_b[i] - self.eta * self.db[i]
+        _new_b = self.b[i] + self.V_b[i]
+        return _new_b
 
     def shift(self):
         # 勾配を計算

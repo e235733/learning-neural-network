@@ -15,7 +15,7 @@ def main():
     ACT_FUNCTION = fn.Tanh()
     OUTPUT_FUNCTION = fn.Softmax(NUM_DATA)
     HIDDEN_LAYER = [8, 8, 8, 8]
-    ETA = 0.05
+    ETA = 0.1
 
     #チェック時やデバッグ時はTrue
     IS_DETAIL_MODE = True
