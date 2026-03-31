@@ -3,8 +3,9 @@ import function as fn
 
 class NeuralNetworkModel:
     def norm(self,Z,mean,std):
-        # Z を正規化
-        norm_Z = (Z - mean) / std
+        # Z を正規化 
+        eps = 1e-8
+        norm_Z = (Z - mean) / (std + eps)
         return norm_Z
     
     def para_generation(self,head,tail):
@@ -56,6 +57,7 @@ class NeuralNetworkModel:
         self.eta = eta
         #グラフ作成用の損失記録
         self.loss_history = [] 
+        self.val_loss_history = []
 
     def loss(self):
         o_fn = self.output_fn
@@ -65,6 +67,19 @@ class NeuralNetworkModel:
         #損失評価
         loss = self.loss()
         self.loss_history.append(loss)
+
+    def calc_val_loss(self, X_val, Y_val):
+        # テストデータでの損失を計算して記録
+        # predict メソッドを使用して出力を得る
+        P_val = self.predict(X_val)
+        # Y_val がラベル形式の場合は one-hot に変換（損失関数の仕様に合わせる）
+        if Y_val.ndim == 1:
+            Y_val_onehot = np.identity(self.output_dim)[Y_val]
+        else:
+            Y_val_onehot = Y_val
+            
+        val_loss = self.output_fn.Loss(P_val, Y_val_onehot)
+        self.val_loss_history.append(val_loss)
 
     
     def upd_A(self):
