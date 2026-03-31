@@ -9,7 +9,7 @@ import numpy as np
 
 def main():
 
-    NUM_DATA = 250
+    NUM_DATA = 100
     NUM_STEPS = 10000
 
     ACT_FUNCTION = fn.Tanh()
@@ -21,7 +21,7 @@ def main():
     IS_DETAIL_MODE = True
 
 
-    data = MoonsDataset(NUM_DATA)
+    data = GaussianQuantilesDataset(NUM_DATA, 2)
 
     fn_box = fn.FunctionBox(ACT_FUNCTION, OUTPUT_FUNCTION)
     model = NeuralNetworkModel(data.X, data.Y, HIDDEN_LAYER, ETA, fn_box)
