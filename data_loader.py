@@ -24,6 +24,9 @@ class DataLoader:
     def normalize(self, data):
         return (data - self.mean) / self.std
     
+    def __len__(self):
+        return int(np.ceil(self.n_samples / self.batch_size))
+    
     def __iter__(self):
         self.reset()
         return self
@@ -39,6 +42,7 @@ class DataLoader:
         batch_X = self.X[batch_indices]
         norm_batch_X = self.normalize(batch_X)
         batch_Y = self.Y[batch_indices]
+
 
         self.current_idx = end_idx
 

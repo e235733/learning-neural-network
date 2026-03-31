@@ -41,8 +41,8 @@ class NeuralNetworkModel:
         # b と W の学習率
         self.eta = eta
         #グラフ作成用の損失記録
-        self.loss_history = [] 
-        self.val_loss_history = []
+        self.train_loss_history = [] 
+        self.test_loss_history = []
 
     
     def upd_A_P(self, X):       
@@ -132,12 +132,6 @@ class NeuralNetworkModel:
         P = self.predict(X)
         o_fn = self.output_fn
         return o_fn.Loss(P, Y)
- 
-    def calc_loss(self, X, Y):
-        #損失評価
-        loss = self.loss(X,Y)
-        self.loss_history.append(loss)
-
 
     
 if __name__ == "__main__":

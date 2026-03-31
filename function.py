@@ -97,11 +97,13 @@ class Softmax(OutputFunction):
         eps = 1e-15
         P_clipped = np.clip(P, eps, 1 - eps)
         logP = np.log(P_clipped)
-        loss = -np.sum(Y * logP) / self.N
+        batch_size = P.shape[0]
+        loss = -np.sum(Y * logP) / batch_size
         return loss
    
     def dLoss(self, P, Y):
-        return (P - Y) / self.N
+        batch_size = P.shape[0]
+        return (P - Y) / batch_size
     
 class Identity(OutputFunction):
     
