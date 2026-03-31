@@ -2,11 +2,6 @@ import numpy as np
 import function as fn
 
 class NeuralNetworkModel:
-    def norm(self,Z,mean,std):
-        # Z を正規化
-        norm_Z = (Z - mean) / std
-        return norm_Z
-    
     def para_generation(self,head,tail):
         rng = np.random.default_rng()
         scale = self.act_fn.initialization(head, tail)
@@ -15,25 +10,7 @@ class NeuralNetworkModel:
         self.W.append(w)
         self.b.append(b)
 
-    def __init__(self, explain:np, depend:np, struct, eta, fn_box:fn.FunctionBox):
-        #説明変数X(D×N), 目的変数Y(K×N)
-        self.X = explain
-        self.N = self.X.shape[0]
-
-        # X を列ごとに正規化
-        self.X_mean = np.mean(self.X, axis=0)
-        self.X_std = np.std(self.X, axis=0)
-        self.norm_X = self.norm(self.X, self.X_mean, self.X_std)
-
-        #各層のニューロンの数
-        self.input_dim = self.X.shape[1]
-        self.hidden_dim = struct
-        self.output_dim = int(np.max(depend) + 1)
-        self.dep = len(struct)
-
-        # Y は one_hot 表現にする
-        self.Y = np.identity(self.output_dim)[depend]
-
+    def para_setting(self, fn_box:fn.FunctionBox, alpha = 0.9):
         #調整すべきパラメータb:切片(1×K),W:傾き(D×K)を隠れ層＋出力層の深さ(L+1)だけ作成
         self.act_fn = fn_box.act
         self.output_fn = fn_box.output     
@@ -50,37 +27,35 @@ class NeuralNetworkModel:
         # W と b と同じ形状のゼロ配列（速度）を作成
         self.V_W = [np.zeros_like(w) for w in self.W]
         self.V_b = [np.zeros_like(b) for b in self.b]
-        self.alpha = 0.5 # 慣性係数（過去の勢いを50%引き継ぐ）
+        self.alpha = alpha # 慣性係数
+
+    def __init__(self, input_dim, output_dim, struct, eta, fn_box:fn.FunctionBox):
+        #各層のニューロンの数
+        self.input_dim = input_dim
+        self.hidden_dim = struct
+        self.output_dim = output_dim
+        self.dep = len(struct)
+
+        self.para_setting(fn_box)
 
         # b と W の学習率
         self.eta = eta
         #グラフ作成用の損失記録
         self.loss_history = [] 
 
-    def loss(self):
-        o_fn = self.output_fn
-        return o_fn.Loss(self.P, self.Y)
- 
-    def calc_loss(self):
-        #損失評価
-        loss = self.loss()
-        self.loss_history.append(loss)
-
     
-    def upd_A(self):
-        # Aも確認可能なようにインスタンス変数に保存
+    def upd_A_P(self, X):       
+        # A の更新
         fn = self.act_fn
-        self.A = [self.norm_X]
+        self.A = [X]
         for i in range(self.dep):
             Z = self.A[i] @ self.W[i] + self.b[i]
             self.A.append(fn.value(Z))
-
-    def upd_P(self):
-        # Pは損失評価にも使うのでインスタンス変数として保存
-        o_fn = self.output_fn
+        # P の更新
+        o_fn = self.output_fn        
         L = self.dep
         Z = self.A[L] @ self.W[L] + self.b[L]
-        self.P = o_fn.value(Z)
+        self.P = o_fn.value(Z)        
 
     def upd_dW_db(self, A, dZ, threshold = 1.0):        
         _dW = []
@@ -100,12 +75,11 @@ class NeuralNetworkModel:
         self.db = _db
 
 
-    def grad(self):
-        self.upd_A()
-        self.upd_P()
+    def grad(self, X, Y):
+        self.upd_A_P(X)
         dZ = []
 
-        dz = self.output_fn.dLoss(self.P, self.Y)
+        dz = self.output_fn.dLoss(self.P, Y)
         dZ.append(dz)
         for i in range(self.dep, 0, -1):
             da = dz @ self.W[i].T
@@ -129,9 +103,9 @@ class NeuralNetworkModel:
         _new_b = self.b[i] + self.V_b[i]
         return _new_b
 
-    def shift(self):
+    def shift(self, X, Y):
         # 勾配を計算
-        self.grad()
+        self.grad(X, Y)
 
         # パラメータの更新
         L = self.dep
@@ -144,14 +118,24 @@ class NeuralNetworkModel:
         self.b = b
 
 
-    def predict(self,X):
-        A = self.norm(X, self.X_mean, self.X_std)       
+    def predict(self, X):
+        A = X       
         for i in range(self.dep):
             Z = A @ self.W[i] + self.b[i]
             A = self.act_fn.value(Z)
         i = self.dep
         Z = A @ self.W[i] + self.b[i]
         return self.output_fn.value(Z)
+    
+    def loss(self, X, Y):
+        P = self.predict(X)
+        o_fn = self.output_fn
+        return o_fn.Loss(P, Y)
+ 
+    def calc_loss(self, X, Y):
+        #損失評価
+        loss = self.loss(X,Y)
+        self.loss_history.append(loss)
 
 
     
