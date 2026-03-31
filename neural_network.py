@@ -28,7 +28,7 @@ class NeuralNetworkModel:
         #各層のニューロンの数
         self.input_dim = self.X.shape[1]
         self.hidden_dim = struct
-        self.output_dim = 2
+        self.output_dim = int(np.max(depend) + 1)
         self.dep = len(struct)
 
         # Y は one_hot 表現にする

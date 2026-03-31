@@ -9,8 +9,8 @@ class MoonsDataset:
         self.Y = Y
 
 class GaussianQuantilesDataset:
-    def __init__(self, n_samples, n_features=2):
-        X, Y = make_gaussian_quantiles(n_samples=n_samples, n_classes=2, n_features=n_features)
+    def __init__(self, n_samples, n_features=2, n_classes=2):
+        X, Y = make_gaussian_quantiles(n_samples=n_samples, n_classes=n_classes, n_features=n_features)
         
         self.X = X
         self.Y = Y

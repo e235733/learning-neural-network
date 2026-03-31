@@ -5,7 +5,9 @@ class Plotter:
     def __init__(self, interval, X, Y, is_detail_mode=False):
         self.interval = interval
         self.X = X
-        self.Y = np.argmax(Y, axis=1) if Y.ndim > 1 else Y
+        # one-hot to integer labels
+        self.Y_labels = np.argmax(Y, axis=1) if Y.ndim > 1 else Y
+        self.num_classes = int(np.max(self.Y_labels) + 1)
         self.is_detail_mode = is_detail_mode
         self.input_dim = X.shape[1]
         
@@ -82,23 +84,28 @@ class Plotter:
         plt.show()
 
     def _plot_1d(self, model, ax):
-        ax.set_title("Decision Boundary (1D)")
+        ax.set_title(f"Decision Boundary (1D, {self.num_classes} classes)")
         x_min, x_max = self.X[:, 0].min() - 0.5, self.X[:, 0].max() + 0.5
         xx = np.linspace(x_min, x_max, 100).reshape(-1, 1)
         
         probs = model.predict(xx)
-        probs_class1 = probs[:, 1]
         
-        ax.plot(xx, probs_class1, color='blue', label='Prob Class 1')
-        ax.axhline(0.5, color='green', linestyle='--', alpha=0.5)
-        ax.scatter(self.X[:, 0], self.Y, c=self.Y, cmap='bwr', edgecolors='k', zorder=3)
+        cmap = plt.get_cmap('tab10')
+        for c in range(self.num_classes):
+            ax.plot(xx, probs[:, c], color=cmap(c), label=f'Prob Class {c}')
+            
+        ax.axhline(0.5, color='gray', linestyle='--', alpha=0.3)
+        
+        ax.scatter(self.X[:, 0], np.zeros_like(self.Y_labels), c=self.Y_labels, cmap='tab10', edgecolors='k', zorder=3, label='True Labels')
+        
         ax.set_ylim(-0.1, 1.1)
         ax.set_xlabel("Input X")
-        ax.set_ylabel("Probability / Class")
+        ax.set_ylabel("Probability")
+        ax.legend(loc='upper right', fontsize='small')
         ax.grid(True, alpha=0.3)
 
     def _plot_2d(self, model, ax):
-        ax.set_title("Decision Boundary")
+        ax.set_title(f"Decision Boundary ({self.num_classes} classes)")
         
         x_min, x_max = self.X[:, 0].min() - 0.5, self.X[:, 0].max() + 0.5
         y_min, y_max = self.X[:, 1].min() - 0.5, self.X[:, 1].max() + 0.5
@@ -106,10 +113,9 @@ class Plotter:
         grid_points = np.c_[xx.ravel(), yy.ravel()]
         
         probs = model.predict(grid_points)
-        probs_class1 = probs[:, 1]
-        predicted_grid = probs_class1.reshape(xx.shape)
+        predicted_classes = np.argmax(probs, axis=1)
+        predicted_grid = predicted_classes.reshape(xx.shape)
 
-        ax.contourf(xx, yy, predicted_grid, alpha=0.3, cmap='bwr', levels=np.linspace(0, 1, 11))
-        ax.contour(xx, yy, predicted_grid, levels=[0.5], colors='green', linewidths=2)
+        ax.contourf(xx, yy, predicted_grid, alpha=0.3, cmap='tab10', levels=np.arange(self.num_classes + 1) - 0.5)
         
-        ax.scatter(self.X[:, 0], self.X[:, 1], c=self.Y, cmap='bwr', edgecolors='k')
+        ax.scatter(self.X[:, 0], self.X[:, 1], c=self.Y_labels, cmap='tab10', edgecolors='k')

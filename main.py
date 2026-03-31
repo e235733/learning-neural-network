@@ -21,7 +21,8 @@ def main():
     IS_DETAIL_MODE = True
 
 
-    data = GaussianQuantilesDataset(NUM_DATA, 2)
+    data = GaussianQuantilesDataset(NUM_DATA, 1, 3)
+
 
     fn_box = fn.FunctionBox(ACT_FUNCTION, OUTPUT_FUNCTION)
     model = NeuralNetworkModel(data.X, data.Y, HIDDEN_LAYER, ETA, fn_box)
