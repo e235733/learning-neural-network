@@ -51,7 +51,7 @@ class NeuralNetworkModel:
         # W と b と同じ形状のゼロ配列（速度）を作成
         self.V_W = [np.zeros_like(w) for w in self.W]
         self.V_b = [np.zeros_like(b) for b in self.b]
-        self.alpha = 0.5 # 慣性係数（過去の勢いを50%引き継ぐ）
+        self.alpha = 0.9 # 慣性係数（過去の勢いを90%引き継ぐ）
 
         # b と W の学習率
         self.eta = eta
