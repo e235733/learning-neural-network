@@ -49,10 +49,13 @@ class Plotter:
 
     def _show_loss(self, model):
         self.ax_loss.cla()
-        self.ax_loss.plot(model.loss_history, color='purple', linewidth=2)
+        self.ax_loss.plot(model.loss_history, color='purple', linewidth=2, label='Train Loss')
+        if hasattr(model, 'val_loss_history') and len(model.val_loss_history) > 0:
+            self.ax_loss.plot(model.val_loss_history, color='orange', linewidth=2, label='Val Loss')
         self.ax_loss.set_title("Learning Curve")
         self.ax_loss.set_xlabel("Iteration")
         self.ax_loss.set_ylabel("Loss")
+        self.ax_loss.legend()
         self.ax_loss.grid(True)
 
     def _show_network_stats(self, model):
