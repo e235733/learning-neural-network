@@ -2,12 +2,6 @@ import numpy as np
 import function as fn
 
 class NeuralNetworkModel:
-    def norm(self,Z,mean,std):
-        # Z を正規化 
-        eps = 1e-8
-        norm_Z = (Z - mean) / (std + eps)
-        return norm_Z
-    
     def para_generation(self,head,tail):
         rng = np.random.default_rng()
         scale = self.act_fn.initialization(head, tail)
