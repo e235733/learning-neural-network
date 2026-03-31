@@ -2,6 +2,12 @@ import numpy as np
 import function as fn
 
 class NeuralNetworkModel:
+    def norm(self,Z,mean,std):
+        # Z を正規化 
+        eps = 1e-8
+        norm_Z = (Z - mean) / (std + eps)
+        return norm_Z
+    
     def para_generation(self,head,tail):
         rng = np.random.default_rng()
         scale = self.act_fn.initialization(head, tail)
@@ -42,6 +48,7 @@ class NeuralNetworkModel:
         self.eta = eta
         #グラフ作成用の損失記録
         self.loss_history = [] 
+        self.val_loss_history = []
 
     
     def upd_A_P(self, X):       
