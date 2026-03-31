@@ -29,12 +29,13 @@ class NeuralNetworkModel:
         self.V_b = [np.zeros_like(b) for b in self.b]
         self.alpha = alpha # 慣性係数
 
-    def __init__(self, input_dim, output_dim, struct, eta, fn_box:fn.FunctionBox):
+    def __init__(self, input_dim, output_dim, struct, eta, fn_box:fn.FunctionBox, l2_lambda):
         #各層のニューロンの数
         self.input_dim = input_dim
         self.hidden_dim = struct
         self.output_dim = output_dim
         self.dep = len(struct)
+        self.l2_lambda = l2_lambda
 
         self.para_setting(fn_box)
 
@@ -64,6 +65,7 @@ class NeuralNetworkModel:
         L = self.dep
         for i in range(L+1):
             dw = A[i].T @ dZ[i]
+            dw += self.l2_lambda * self.W[i]
             
             # --- 勾配クリッピングを追加 ---
             # dw が -1.0 ～ 1.0 の範囲に収まるように制限
@@ -131,7 +133,14 @@ class NeuralNetworkModel:
     def loss(self, X, Y):
         P = self.predict(X)
         o_fn = self.output_fn
-        return o_fn.Loss(P, Y)
+        base_loss = o_fn.Loss(P, Y)
+        
+        l2_penalty = 0.0
+        for w in self.W:
+            l2_penalty += np.sum(w ** 2) 
+        l2_penalty *= (self.l2_lambda / 2)
+
+        return l2_penalty + base_loss
 
     
 if __name__ == "__main__":
