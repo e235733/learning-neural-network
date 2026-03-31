@@ -9,4 +9,4 @@ class MnistDataset:
         Y = mnist.target[:n_samples].astype(np.int32)
 
         self.X = X / 255.0
-        self.Y = Y
+        self.Y = np.identity(10)[Y]

@@ -1,18 +1,25 @@
 from mnist_dataset import MnistDataset
 from plotter import Plotter
+from data_loader import DataLoader
 from neural_network import NeuralNetworkModel
 import function as fn
 import numpy as np
 from sklearn.model_selection import train_test_split
 
+import time
+
 def main():
 
-    NUM_DATA = 20000
-    NUM_STEPS = 1000
+    NUM_DATA = 60000
+    INPUT_DIM = 28 * 28
+    OUTPUT_DIM = 10
+    
+    NUM_EPOCHS = 100
+    BATCH_SIZE = 512
 
     ACT_FUNCTION = fn.LeakyReLU()
-    HIDDEN_LAYER = [128, 32]
-    ETA = 0.1
+    HIDDEN_LAYER = [256, 128, 64, 32]
+    ETA = 0.02
 
     #チェック時やデバッグ時はTrue
     IS_DETAIL_MODE = True
@@ -25,38 +32,61 @@ def main():
     )
 
     # --- モデルとプロッターの初期化 ---
-    OUTPUT_FUNCTION = fn.Softmax(len(X_train))
+    # Softmaxの初期引数は適当で良くなった（内部でバッチサイズを見るため）
+    OUTPUT_FUNCTION = fn.Softmax(BATCH_SIZE)
     fn_box = fn.FunctionBox(ACT_FUNCTION, OUTPUT_FUNCTION)
     
-    model = NeuralNetworkModel(X_train, Y_train, HIDDEN_LAYER, ETA, fn_box)
-    # プロッターには訓練データを渡して初期化
-    plotter = Plotter(0.1, X_train, Y_train, IS_DETAIL_MODE)
+    train_loader = DataLoader(X_train, Y_train, batch_size=BATCH_SIZE)
+    # テストデータも同じ統計量で正規化しておく
+    X_test_norm = train_loader.normalize(X_test)
+    
+    model = NeuralNetworkModel(INPUT_DIM, OUTPUT_DIM, HIDDEN_LAYER, ETA, fn_box)
+    
+    # プロッターには訓練データの一部（可視化用）を渡す
+    plotter = Plotter(0.1, X_train[:500], Y_train[:500], IS_DETAIL_MODE)
 
-    for step in range(NUM_STEPS):
-        model.shift()
-        model.calc_loss()
-        # テストデータの損失を計算
-        model.calc_val_loss(X_test, Y_test)
+    print(f"Start training: {len(X_train)} samples, {len(train_loader)} batches per epoch")
+
+    start_time = time.time()
+
+    for epoch in range(NUM_EPOCHS):
+
+        for X_batch, Y_batch in train_loader:
+            model.shift(X_batch, Y_batch)
         
-        if step % 500 == 0:
-            plotter.show(model)
-            loss = model.loss_history[-1]
-            val_loss = model.val_loss_history[-1]
-            print(f"Step {step}, Loss: {loss:.4f}, Val Loss: {val_loss:.4f}")
+        # 損失の記録と表示（毎エポックではなく一定間隔に）
+        if epoch % 10 == 0:
+            # 訓練データの一部で損失を近似（高速化のため）
+            train_loss = model.loss(X_train[:1000], Y_train[:1000])
+            test_loss = model.loss(X_test_norm, Y_test)
+            
+            model.train_loss_history.append(train_loss)
+            model.test_loss_history.append(test_loss)
+            
+            print(f"Epoch {epoch}, Train Loss: {train_loss:.4f}, Test Loss: {test_loss:.4f}")
+            
+            if epoch % 50 == 0:
+                plotter.show(model)
+
+    end_time = time.time()
             
     plotter.show(model)
 
     # 訓練データの正解率
     Y_train_pred = np.argmax(model.predict(X_train), axis=1)
-    train_accuracy = np.mean(Y_train_pred == Y_train)
+    Y_train_labels = np.argmax(Y_train, axis=1) if Y_train.ndim > 1 else Y_train
+    train_accuracy = np.mean(Y_train_pred == Y_train_labels)
     print(f"Final Train Accuracy: {train_accuracy * 100:.2f}%")
 
-    # 正解率の計算（テストデータで最終確認）
-    Y_test_pred = np.argmax(model.predict(X_test), axis=1)
-    test_accuracy = np.mean(Y_test_pred == Y_test)
+    # 最終的な正解率の計算
+    Y_test_pred = np.argmax(model.predict(X_test_norm), axis=1)
+    Y_test_labels = np.argmax(Y_test, axis=1) if Y_test.ndim > 1 else Y_test
+    test_accuracy = np.mean(Y_test_pred == Y_test_labels)
     print(f"Final Test Accuracy: {test_accuracy * 100:.2f}%")
 
     plotter.finish()
+
+    print("time:", end_time - start_time)
 
 if __name__ == "__main__":
     main()
