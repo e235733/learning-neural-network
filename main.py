@@ -18,8 +18,10 @@ def main():
     BATCH_SIZE = 512
 
     ACT_FUNCTION = fn.LeakyReLU()
-    HIDDEN_LAYER = [256, 128, 64, 32]
+    HIDDEN_LAYER = [64, 32]
     ETA = 0.02
+    
+    L2_LAMBDA = 0.005
 
     #チェック時やデバッグ時はTrue
     IS_DETAIL_MODE = True
@@ -37,10 +39,11 @@ def main():
     fn_box = fn.FunctionBox(ACT_FUNCTION, OUTPUT_FUNCTION)
     
     train_loader = DataLoader(X_train, Y_train, batch_size=BATCH_SIZE)
+    X_train_norm = train_loader.normalize(X_train)
     # テストデータも同じ統計量で正規化しておく
     X_test_norm = train_loader.normalize(X_test)
     
-    model = NeuralNetworkModel(INPUT_DIM, OUTPUT_DIM, HIDDEN_LAYER, ETA, fn_box)
+    model = NeuralNetworkModel(INPUT_DIM, OUTPUT_DIM, HIDDEN_LAYER, ETA, fn_box, L2_LAMBDA)
     
     # プロッターには訓練データの一部（可視化用）を渡す
     plotter = Plotter(0.1, X_train[:500], Y_train[:500], IS_DETAIL_MODE)
@@ -57,7 +60,7 @@ def main():
         # 損失の記録と表示（毎エポックではなく一定間隔に）
         if epoch % 10 == 0:
             # 訓練データの一部で損失を近似（高速化のため）
-            train_loss = model.loss(X_train[:1000], Y_train[:1000])
+            train_loss = model.loss(X_train_norm[:1000], Y_train[:1000])
             test_loss = model.loss(X_test_norm, Y_test)
             
             model.train_loss_history.append(train_loss)
@@ -73,7 +76,7 @@ def main():
     plotter.show(model)
 
     # 訓練データの正解率
-    Y_train_pred = np.argmax(model.predict(X_train), axis=1)
+    Y_train_pred = np.argmax(model.predict(X_train_norm), axis=1)
     Y_train_labels = np.argmax(Y_train, axis=1) if Y_train.ndim > 1 else Y_train
     train_accuracy = np.mean(Y_train_pred == Y_train_labels)
     print(f"Final Train Accuracy: {train_accuracy * 100:.2f}%")
