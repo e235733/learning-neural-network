@@ -1,5 +1,6 @@
 import numpy as np
 import function as fn
+import packages as pkg
 
 class NeuralNetworkModel:
     def para_generation(self,head,tail):
@@ -10,14 +11,14 @@ class NeuralNetworkModel:
         self.W.append(w)
         self.b.append(b)
 
-    def para_setting(self, fn_box:fn.FunctionBox, alpha = 0.9):
+    def para_setting(self, fn_pkg:pkg.FunctionPackage, alpha = 0.9):
         #調整すべきパラメータb:切片(1×K),W:傾き(D×K)を隠れ層＋出力層の深さ(L+1)だけ作成
-        self.act_fn = fn_box.act
-        self.output_fn = fn_box.output     
+        self.act_fn = fn_pkg.act
+        self.output_fn = fn_pkg.output     
         self.W = []
         self.b = []
         head = self.input_dim
-        for tail in self.hidden_dim:
+        for tail in self.hidden_layer:
             self.para_generation(head, tail)
             head = tail
         tail = self.output_dim
@@ -29,22 +30,22 @@ class NeuralNetworkModel:
         self.V_b = [np.zeros_like(b) for b in self.b]
         self.alpha = alpha # 慣性係数
 
-    def __init__(self, input_dim, output_dim, struct, eta, fn_box:fn.FunctionBox, l2_lambda):
+    def __init__(self, flm_pkg:pkg.FlamePackage, fn_pkg:pkg.FunctionPackage, eta, l2_lambda):
         #各層のニューロンの数
-        self.input_dim = input_dim
-        self.hidden_dim = struct
-        self.output_dim = output_dim
-        self.dep = len(struct)
+        self.input_dim = flm_pkg.input_dim
+        self.output_dim = flm_pkg.output_dim        
+        self.hidden_layer = flm_pkg.hidden_layer
+        self.dep = len(self.hidden_layer)
+
         self.l2_lambda = l2_lambda
 
-        self.para_setting(fn_box)
+        self.para_setting(fn_pkg)
 
         # b と W の学習率
         self.eta = eta
         #グラフ作成用の損失記録
         self.train_loss_history = [] 
         self.test_loss_history = []
-
     
     def upd_A_P(self, X):       
         # A の更新
@@ -146,17 +147,25 @@ class NeuralNetworkModel:
 if __name__ == "__main__":
     from xor_dataset import XorDataset
     import function as fn
+    import packages as pkg
+
+    DATA_SIZE = 10
 
     ETA = 0.1
-    STRUCT = [4, 4]
+    L2_LAMBDA = 0.005
+    HIDDEN_LAYER = [4, 4]
 
     ACT_FN = fn.Sigmoid()
+    OUTPUT_FN = fn.Softmax(DATA_SIZE)
 
     data = XorDataset(10)
     print("data X, Y:")
     print(data.X)
     print(data.Y)
-    model = NeuralNetworkModel(explain=data.X, depend=data.Y, struct=STRUCT, eta=ETA, act_fn=ACT_FN)
+
+    flm_pkg = pkg.FlamePackage(2,2, HIDDEN_LAYER)
+    fn_pkg = pkg.FunctionPackage(ACT_FN, OUTPUT_FN)
+    model = NeuralNetworkModel(flm_pkg, fn_pkg, ETA, L2_LAMBDA)
 
     print(model.W)
     model.shift()
