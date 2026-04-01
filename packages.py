@@ -6,8 +6,13 @@ class FlamePackage:
         self.output_dim = output_dim
         self.hidden_layer = hidden_layer
 
-
 class FunctionPackage:
     def __init__(self, act_fn :fn.Function, output_fn :fn.OutputFunction):
         self.act = act_fn
         self.output = output_fn
+
+class CoefficientPackage:
+    def __init__(self, eta, l2_lambda, alpha):
+        self.eta = eta
+        self.l2_lambda = l2_lambda
+        self.alpha = alpha

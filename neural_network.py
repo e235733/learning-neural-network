@@ -11,10 +11,8 @@ class NeuralNetworkModel:
         self.W.append(w)
         self.b.append(b)
 
-    def para_setting(self, fn_pkg:pkg.FunctionPackage, alpha = 0.9):
-        #調整すべきパラメータb:切片(1×K),W:傾き(D×K)を隠れ層＋出力層の深さ(L+1)だけ作成
-        self.act_fn = fn_pkg.act
-        self.output_fn = fn_pkg.output     
+    def para_setting(self):
+        #調整すべきパラメータb:切片(1×K),W:傾き(D×K)を隠れ層＋出力層の深さ(L+1)だけ作成    
         self.W = []
         self.b = []
         head = self.input_dim
@@ -28,21 +26,23 @@ class NeuralNetworkModel:
         # W と b と同じ形状のゼロ配列（速度）を作成
         self.V_W = [np.zeros_like(w) for w in self.W]
         self.V_b = [np.zeros_like(b) for b in self.b]
-        self.alpha = alpha # 慣性係数
 
-    def __init__(self, flm_pkg:pkg.FlamePackage, fn_pkg:pkg.FunctionPackage, eta, l2_lambda):
+    def __init__(self, flm_pkg:pkg.FlamePackage, fn_pkg:pkg.FunctionPackage, coef_pkg:pkg.CoefficientPackage):
         #各層のニューロンの数
         self.input_dim = flm_pkg.input_dim
         self.output_dim = flm_pkg.output_dim        
         self.hidden_layer = flm_pkg.hidden_layer
         self.dep = len(self.hidden_layer)
 
-        self.l2_lambda = l2_lambda
+        self.act_fn = fn_pkg.act # 隠れ層の活性化関数
+        self.output_fn = fn_pkg.output # 出力層の活性化関数
+        
+        self.eta = coef_pkg.eta # b と W の学習率
+        self.l2_lambda = coef_pkg.l2_lambda # L2正則化のペナルティ
+        self.alpha = coef_pkg.alpha # 慣性係数
+        
+        self.para_setting()
 
-        self.para_setting(fn_pkg)
-
-        # b と W の学習率
-        self.eta = eta
         #グラフ作成用の損失記録
         self.train_loss_history = [] 
         self.test_loss_history = []
@@ -153,6 +153,7 @@ if __name__ == "__main__":
 
     ETA = 0.1
     L2_LAMBDA = 0.005
+
     HIDDEN_LAYER = [4, 4]
 
     ACT_FN = fn.Sigmoid()
@@ -165,7 +166,9 @@ if __name__ == "__main__":
 
     flm_pkg = pkg.FlamePackage(2,2, HIDDEN_LAYER)
     fn_pkg = pkg.FunctionPackage(ACT_FN, OUTPUT_FN)
-    model = NeuralNetworkModel(flm_pkg, fn_pkg, ETA, L2_LAMBDA)
+    coef_pkg = pkg.CoefficientPackage(ETA, L2_LAMBDA, 0.9)
+    
+    model = NeuralNetworkModel(flm_pkg, fn_pkg, coef_pkg)
 
     print(model.W)
     model.shift()

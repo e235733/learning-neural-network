@@ -12,21 +12,22 @@ import time
 def main():
 
     NUM_DATA = 60000
+    NUM_EPOCHS = 100
+    BATCH_SIZE = 512
 
     # FlamePackage に格納するパラメーター
     INPUT_DIM = 28 * 28
     OUTPUT_DIM = 10
     HIDDEN_LAYER = [128, 64, 32]
     
-    NUM_EPOCHS = 100
-    BATCH_SIZE = 512
-
     # FunctionPackage に格納する活性化関数
     ACT_FUNCTION = fn.LeakyReLU()
     OUTPUT_FUNCTION = fn.Softmax(BATCH_SIZE)
-      
+
+    # CoefficientPackage に格納するパラメーター
     ETA = 0.02
     L2_LAMBDA = 0.005
+    ALPHA = 0.9
 
     #チェック時やデバッグ時はTrue
     IS_DETAIL_MODE = True
@@ -46,8 +47,10 @@ def main():
 
     
     flm_pkg = pkg.FlamePackage(INPUT_DIM, OUTPUT_DIM, HIDDEN_LAYER)
-    fn_pkg = pkg.FunctionPackage(ACT_FUNCTION, OUTPUT_FUNCTION)    
-    model = NeuralNetworkModel(flm_pkg, fn_pkg, ETA, L2_LAMBDA)
+    fn_pkg = pkg.FunctionPackage(ACT_FUNCTION, OUTPUT_FUNCTION)
+    coef_pkg = pkg.CoefficientPackage(ETA, L2_LAMBDA, ALPHA)
+    
+    model = NeuralNetworkModel(flm_pkg, fn_pkg, coef_pkg)
     
     # プロッターには訓練データの一部（可視化用）を渡す
     plotter = Plotter(0.1, X_train[:500], Y_train[:500], IS_DETAIL_MODE)
