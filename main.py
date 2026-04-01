@@ -3,6 +3,7 @@ from plotter import Plotter
 from data_loader import DataLoader
 from neural_network import NeuralNetworkModel
 import function as fn
+import packages as pkg
 import numpy as np
 from sklearn.model_selection import train_test_split
 
@@ -11,17 +12,22 @@ import time
 def main():
 
     NUM_DATA = 60000
-    INPUT_DIM = 28 * 28
-    OUTPUT_DIM = 10
-    
     NUM_EPOCHS = 100
     BATCH_SIZE = 512
 
-    ACT_FUNCTION = fn.LeakyReLU()
-    HIDDEN_LAYER = [64, 32]
-    ETA = 0.02
+    # FlamePackage に格納するパラメーター
+    INPUT_DIM = 28 * 28
+    OUTPUT_DIM = 10
+    HIDDEN_LAYER = [128, 64, 32]
     
+    # FunctionPackage に格納する活性化関数
+    ACT_FUNCTION = fn.LeakyReLU()
+    OUTPUT_FUNCTION = fn.Softmax(BATCH_SIZE)
+
+    # CoefficientPackage に格納するパラメーター
+    ETA = 0.02
     L2_LAMBDA = 0.005
+    ALPHA = 0.9
 
     #チェック時やデバッグ時はTrue
     IS_DETAIL_MODE = True
@@ -33,17 +39,18 @@ def main():
         all_data.X, all_data.Y, test_size=0.2, random_state=42
     )
 
-    # --- モデルとプロッターの初期化 ---
-    # Softmaxの初期引数は適当で良くなった（内部でバッチサイズを見るため）
-    OUTPUT_FUNCTION = fn.Softmax(BATCH_SIZE)
-    fn_box = fn.FunctionBox(ACT_FUNCTION, OUTPUT_FUNCTION)
     
     train_loader = DataLoader(X_train, Y_train, batch_size=BATCH_SIZE)
     X_train_norm = train_loader.normalize(X_train)
     # テストデータも同じ統計量で正規化しておく
     X_test_norm = train_loader.normalize(X_test)
+
     
-    model = NeuralNetworkModel(INPUT_DIM, OUTPUT_DIM, HIDDEN_LAYER, ETA, fn_box, L2_LAMBDA)
+    flm_pkg = pkg.FlamePackage(INPUT_DIM, OUTPUT_DIM, HIDDEN_LAYER)
+    fn_pkg = pkg.FunctionPackage(ACT_FUNCTION, OUTPUT_FUNCTION)
+    coef_pkg = pkg.CoefficientPackage(ETA, L2_LAMBDA, ALPHA)
+    
+    model = NeuralNetworkModel(flm_pkg, fn_pkg, coef_pkg)
     
     # プロッターには訓練データの一部（可視化用）を渡す
     plotter = Plotter(0.1, X_train[:500], Y_train[:500], IS_DETAIL_MODE)

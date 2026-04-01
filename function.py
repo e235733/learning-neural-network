@@ -43,7 +43,8 @@ class ReLU(Function):
         return np.sqrt(2 / head)
     
     def value(self, X):
-        return np.maximum(-1e-15, X)
+        eps = 1e-15
+        return np.maximum(-eps, X)
     
     def diff(self, Y):
         return (Y >= 0).astype(float)
@@ -60,7 +61,7 @@ class LeakyReLU(Function):
     
     def diff(self, Y):
         # Yが0より大きければ1.0、小さければalphaの配列を作る
-        # np.ones_like で Y と同じ形の 1.0 の配列を作り、0以下の場所を alpha で上書きします
+        # np.ones_like で Y と同じ形の 1.0 の配列を作り、0以下の場所を alpha で上書き
         d = np.ones_like(Y)
         d[Y < 0] = self.alpha
         return d
@@ -68,9 +69,8 @@ class LeakyReLU(Function):
 
 
 class OutputFunction(ABC):
-    def __init__(self, num_data, num_output_dim=1):
-        self.N = num_data
-        self.data_size = num_data * num_output_dim
+    def __init__(self, denominator):
+        self.denominator = denominator
 
     @abstractmethod
     def value(self, X):
@@ -85,27 +85,32 @@ class OutputFunction(ABC):
         pass
 
 class Softmax(OutputFunction):
+    def __init__(self, batch_size):
+        super().__init__(batch_size)
         
     def value(self, X):
+        eps = 1e-15
         X_max = np.max(X, axis=1, keepdims=True)
         exp_X = np.exp(X - X_max)
         sum_exp = np.sum(exp_X,axis=1,keepdims=True)
-        return exp_X / (sum_exp + 1e-15)
+        return exp_X / (sum_exp + eps)
     
     def Loss(self, P, Y):
         # Pが0や1にならないように極小値を挟む        
         eps = 1e-15
         P_clipped = np.clip(P, eps, 1 - eps)
         logP = np.log(P_clipped)
-        batch_size = P.shape[0]
+        batch_size = self.denominator
         loss = -np.sum(Y * logP) / batch_size
         return loss
    
     def dLoss(self, P, Y):
-        batch_size = P.shape[0]
+        batch_size = self.denominator
         return (P - Y) / batch_size
     
 class Identity(OutputFunction):
+    def __init__(self, size_P):
+        super().__init__(size_P)
     
     def value(self, X):
         return X
@@ -114,11 +119,5 @@ class Identity(OutputFunction):
         return np.mean((P - Y)**2)
     
     def dLoss(self, P, Y):
-        return 2*(P - Y) / self.data_size
-    
-
-
-class FunctionBox:
-    def __init__(self, act_fn :Function, output_fn :OutputFunction):
-        self.act = act_fn
-        self.output = output_fn
+        size_P = self.denominator
+        return 2*(P - Y) / size_P
