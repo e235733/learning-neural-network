@@ -1,9 +1,11 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from data_loader import DataLoader
 
 class Plotter:
-    def __init__(self, interval, X, Y, is_detail_mode=False):
+    def __init__(self, interval, normalize:DataLoader.normalize, X, Y, is_detail_mode=False):
         self.interval = interval
+        self.normalize = normalize
         self.X = X
         # one-hot to integer labels
         self.Y_labels = np.argmax(Y, axis=1) if Y.ndim > 1 else Y
@@ -90,8 +92,9 @@ class Plotter:
         ax.set_title(f"Decision Boundary (1D, {self.num_classes} classes)")
         x_min, x_max = self.X[:, 0].min() - 0.5, self.X[:, 0].max() + 0.5
         xx = np.linspace(x_min, x_max, 100).reshape(-1, 1)
+        norm_xx = self.normalize(xx)
         
-        probs = model.predict(xx)
+        probs = model.predict(norm_xx)
         
         cmap = plt.get_cmap('tab10')
         for c in range(self.num_classes):
@@ -114,8 +117,9 @@ class Plotter:
         y_min, y_max = self.X[:, 1].min() - 0.5, self.X[:, 1].max() + 0.5
         xx, yy = np.meshgrid(np.linspace(x_min, x_max, 50), np.linspace(y_min, y_max, 50))
         grid_points = np.c_[xx.ravel(), yy.ravel()]
+        norm_grid_points = self.normalize(grid_points)
         
-        probs = model.predict(grid_points)
+        probs = model.predict(norm_grid_points)
         predicted_classes = np.argmax(probs, axis=1)
         predicted_grid = predicted_classes.reshape(xx.shape)
 
