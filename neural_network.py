@@ -1,6 +1,36 @@
 import numpy as np
 import function as fn
-import packages as pkg
+
+class ModelSetter:
+    def __init__(self):
+        self.is_flame_set = False
+        self.is_function_set = False
+        self.is_coefficient_set = False
+
+    def setting_Flame(self, input_dim = 2, output_dim = 2, hidden_layer = [64, 64, 32, 32]):
+        self.input_dim = input_dim
+        self.output_dim = output_dim
+        self.hidden_layer = hidden_layer
+        self.is_flame_set = True
+
+    def setting_Function(self, act_fn:fn.Function  = fn.ReLU(), output_fn:fn.OutputFunction = fn.Softmax()):
+        self.act_fn = act_fn
+        self.output_fn = output_fn
+        self.is_function_set = True
+
+    def setting_Coefficient(self, eta = 0.02, l2_lambda = 0.01, alpha = 0.9):
+        self.eta = eta
+        self.l2_lambda = l2_lambda
+        self.alpha = alpha
+        self.is_coefficient_set = True
+
+    def create_model(self):
+        if self.is_flame_set and self.is_function_set and self.is_coefficient_set:
+            return NeuralNetworkModel(self)
+        else:
+            raise ValueError("All parameters must be set before creating the model")
+        
+
 
 class NeuralNetworkModel:
     def para_generation(self,head,tail):
@@ -11,12 +41,12 @@ class NeuralNetworkModel:
         self.W.append(w)
         self.b.append(b)
 
-    def para_setting(self):
+    def para_setting(self, hidden_layer):
         #調整すべきパラメータb:切片(1×K),W:傾き(D×K)を隠れ層＋出力層の深さ(L+1)だけ作成    
         self.W = []
         self.b = []
         head = self.input_dim
-        for tail in self.hidden_layer:
+        for tail in hidden_layer:
             self.para_generation(head, tail)
             head = tail
         tail = self.output_dim
@@ -27,21 +57,21 @@ class NeuralNetworkModel:
         self.V_W = [np.zeros_like(w) for w in self.W]
         self.V_b = [np.zeros_like(b) for b in self.b]
 
-    def __init__(self, flm_pkg:pkg.FlamePackage, fn_pkg:pkg.FunctionPackage, coef_pkg:pkg.CoefficientPackage):
+    def __init__(self, model_setter: ModelSetter):
         #各層のニューロンの数
-        self.input_dim = flm_pkg.input_dim
-        self.output_dim = flm_pkg.output_dim        
-        self.hidden_layer = flm_pkg.hidden_layer
-        self.dep = len(self.hidden_layer)
+        self.input_dim = model_setter.input_dim
+        self.output_dim = model_setter.output_dim        
+        hidden_layer = model_setter.hidden_layer
+        self.dep = len(hidden_layer)
 
-        self.act_fn = fn_pkg.act # 隠れ層の活性化関数
-        self.output_fn = fn_pkg.output # 出力層の活性化関数
-        
-        self.eta = coef_pkg.eta # b と W の学習率
-        self.l2_lambda = coef_pkg.l2_lambda # L2正則化のペナルティ
-        self.alpha = coef_pkg.alpha # 慣性係数
-        
-        self.para_setting()
+        self.act_fn = model_setter.act_fn # 隠れ層の活性化関数
+        self.output_fn = model_setter.output_fn # 出力層の活性化関数
+
+        self.eta = model_setter.eta # b と W の学習率
+        self.l2_lambda = model_setter.l2_lambda # L2正則化のペナルティ
+        self.alpha = model_setter.alpha # 慣性係数
+
+        self.para_setting(hidden_layer)
 
         #グラフ作成用の損失記録
         self.train_loss_history = [] 
@@ -147,7 +177,6 @@ class NeuralNetworkModel:
 if __name__ == "__main__":
     from xor_dataset import XorDataset
     import function as fn
-    import packages as pkg
 
     DATA_SIZE = 10
 
@@ -164,11 +193,11 @@ if __name__ == "__main__":
     print(data.X)
     print(data.Y)
 
-    flm_pkg = pkg.FlamePackage(2,2, HIDDEN_LAYER)
-    fn_pkg = pkg.FunctionPackage(ACT_FN, OUTPUT_FN)
-    coef_pkg = pkg.CoefficientPackage(ETA, L2_LAMBDA, 0.9)
-    
-    model = NeuralNetworkModel(flm_pkg, fn_pkg, coef_pkg)
+    setter = ModelSetter()
+    setter.setting_Flame(2, 2, HIDDEN_LAYER)
+    setter.setting_Function(ACT_FN, OUTPUT_FN)
+    setter.setting_Coefficient(ETA, L2_LAMBDA, 0.9)
+    model = setter.create_model()
 
     print(model.W)
     model.shift()
