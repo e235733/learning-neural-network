@@ -2,33 +2,50 @@ import numpy as np
 import function as fn
 
 class ModelSetter:
-    def __init__(self):
-        self.is_flame_set = False
-        self.is_function_set = False
-        self.is_coefficient_set = False
+    def __init__(self, batch_size = None, x_data:np.ndarray = None, y_data: np.ndarray = None):
+        self.batch_size = batch_size
+        self.x_data = x_data
+        self.y_data = y_data
+        self.is_not_flame_set = True
+        self.is_not_function_set = True
+        self.is_not_coefficient_set = True
 
-    def setting_Flame(self, input_dim = 2, output_dim = 2, hidden_layer = [64, 64, 32, 32]):
+    def setting_Flame(self, hidden_layer, input_dim = None, output_dim = None):
+        if input_dim is None:
+            input_dim = self.x_data.shape[1]
+        if output_dim is None:
+            output_dim = self.y_data.shape[1]
+
         self.input_dim = input_dim
         self.output_dim = output_dim
         self.hidden_layer = hidden_layer
-        self.is_flame_set = True
+        self.is_not_flame_set = False
 
-    def setting_Function(self, act_fn:fn.Function  = fn.ReLU(), output_fn:fn.OutputFunction = fn.Softmax()):
+    def setting_Function(self, act_fn:fn.Function, output_fn:fn.OutputFunction):
+        if act_fn is None:
+            act_fn = fn.LeakyReLU()
+        if output_fn is None:
+            output_fn = fn.Softmax(self.batch_size)
+
         self.act_fn = act_fn
         self.output_fn = output_fn
-        self.is_function_set = True
+        self.is_not_function_set = False
 
     def setting_Coefficient(self, eta = 0.02, l2_lambda = 0.01, alpha = 0.9):
         self.eta = eta
         self.l2_lambda = l2_lambda
         self.alpha = alpha
-        self.is_coefficient_set = True
+        self.is_not_coefficient_set = False
 
     def create_model(self):
-        if self.is_flame_set and self.is_function_set and self.is_coefficient_set:
-            return NeuralNetworkModel(self)
-        else:
-            raise ValueError("All parameters must be set before creating the model")
+        if self.is_not_flame_set:
+            raise ValueError("Flame parameters not set. Please call setting_Flame() before creating the model.")
+        if self.is_not_function_set:
+            self.setting_Function()
+        if self.is_not_coefficient_set:
+            self.setting_Coefficient()
+        
+        return NeuralNetworkModel(self)
         
 
 

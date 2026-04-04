@@ -3,7 +3,7 @@ from sklearn_datasets import MoonsDataset, GaussianQuantilesDataset
 from mnist_dataset import MnistDataset
 from plotter import Plotter
 from data_loader import DataLoader
-from neural_network import ModelSetter,NeuralNetworkModel
+from neural_network import ModelSetter
 import function as fn
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -16,16 +16,16 @@ def main():
     NUM_EPOCHS = 1000
     BATCH_SIZE = 200
 
-    # FlamePackage に格納するパラメーター
+    # setting_Flame に  登録するパラメーター
     INPUT_DIM = 2
     OUTPUT_DIM = 2
     HIDDEN_LAYER = [64, 64, 32, 32]
     
-    # FunctionPackage に格納する活性化関数
+    # setting_Function に登録する活性化関数
     ACT_FUNCTION = fn.LeakyReLU()
     OUTPUT_FUNCTION = fn.Softmax(BATCH_SIZE)
 
-    # CoefficientPackage に格納するパラメーター
+    # setting_Coefficient に登録するパラメーター
     ETA = 0.02  # 学習率
     L2_LAMBDA = 0.001  # L2正則化のペナルティ
     ALPHA = 0.9  # Momentum の慣性係数
