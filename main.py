@@ -3,9 +3,8 @@ from sklearn_datasets import MoonsDataset, GaussianQuantilesDataset
 from mnist_dataset import MnistDataset
 from plotter import Plotter
 from data_loader import DataLoader
-from neural_network import NeuralNetworkModel
+from neural_network import ModelSetter,NeuralNetworkModel
 import function as fn
-import packages as pkg
 import numpy as np
 from sklearn.model_selection import train_test_split
 
@@ -14,7 +13,7 @@ import time
 def main():
 
     NUM_DATA = 500
-    NUM_EPOCHS = 10000
+    NUM_EPOCHS = 1000
     BATCH_SIZE = 200
 
     # FlamePackage に格納するパラメーター
@@ -48,12 +47,11 @@ def main():
     # テストデータも同じ統計量で正規化しておく
     X_test_norm = normalize(X_test)
 
-    
-    flm_pkg = pkg.FlamePackage(INPUT_DIM, OUTPUT_DIM, HIDDEN_LAYER)
-    fn_pkg = pkg.FunctionPackage(ACT_FUNCTION, OUTPUT_FUNCTION)
-    coef_pkg = pkg.CoefficientPackage(ETA, L2_LAMBDA, ALPHA)
-    
-    model = NeuralNetworkModel(flm_pkg, fn_pkg, coef_pkg)
+    setter = ModelSetter()
+    setter.setting_Flame(INPUT_DIM, OUTPUT_DIM, HIDDEN_LAYER)
+    setter.setting_Function(ACT_FUNCTION, OUTPUT_FUNCTION)
+    setter.setting_Coefficient(ETA, L2_LAMBDA, ALPHA)
+    model = setter.create_model()
     
     # プロッターには訓練データの一部（可視化用）を渡す
     plotter = Plotter(0.1, normalize, X_train[:500], Y_train[:500], IS_DETAIL_MODE)
@@ -68,7 +66,7 @@ def main():
             model.shift(X_batch, Y_batch)
         
         # 損失の記録と表示（毎エポックではなく一定間隔に）
-        if epoch % 100 == 0:
+        if epoch % 10 == 0:
             # 訓練データの一部で損失を近似（高速化のため）
             train_loss = model.loss(X_train_norm[:1000], Y_train[:1000])
             test_loss = model.loss(X_test_norm, Y_test)
@@ -78,7 +76,7 @@ def main():
             
             print(f"Epoch {epoch}, Train Loss: {train_loss:.4f}, Test Loss: {test_loss:.4f}")
             
-            if epoch % 500 == 0:
+            if epoch % 50 == 0:
                 plotter.show(model)
 
     end_time = time.time()
