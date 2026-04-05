@@ -42,12 +42,12 @@ class ModelSetter:
         self.W.append(w)
         self.b.append(b)
 
-    def para_setting(self):
+    def para_setting(self, hidden_layer):
         #調整すべきパラメータb:切片(1×K),W:傾き(D×K)を隠れ層＋出力層の深さ(L+1)だけ作成    
         self.W = []
         self.b = []
         head = self.input_dim
-        for tail in self.hidden_layer:
+        for tail in hidden_layer:
             self.para_generation(head, tail)
             head = tail
         tail = self.output_dim
@@ -183,7 +183,6 @@ class NeuralNetworkModel:
 if __name__ == "__main__":
     from xor_dataset import XorDataset
     import function as fn
-    import packages as pkg
 
     DATA_SIZE = 10
 
@@ -200,11 +199,11 @@ if __name__ == "__main__":
     print(data.X)
     print(data.Y)
 
-    flm_pkg = pkg.FlamePackage(2,2, HIDDEN_LAYER)
-    fn_pkg = pkg.FunctionPackage(ACT_FN, OUTPUT_FN)
-    coef_pkg = pkg.CoefficientPackage(ETA, L2_LAMBDA, 0.9)
-    
-    model = NeuralNetworkModel(flm_pkg, fn_pkg, coef_pkg)
+    setter = ModelSetter()
+    setter.setting_Flame(2, 2, HIDDEN_LAYER)
+    setter.setting_Function(ACT_FN, OUTPUT_FN)
+    setter.setting_Coefficient(ETA, L2_LAMBDA, 0.9)
+    model = setter.create_model()
 
     print(model.W)
     model.shift()

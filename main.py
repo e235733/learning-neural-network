@@ -5,7 +5,6 @@ from plotter import Plotter
 from data_loader import DataLoader, DataNormalizer
 from neural_network import ModelSetter
 import function as fn
-import packages as pkg
 import numpy as np
 from sklearn.model_selection import train_test_split
 
@@ -20,11 +19,11 @@ def main():
     # setting_Flame に  登録するパラメーター
     HIDDEN_LAYER = [64, 64, 32, 32]
     
-    # FunctionPackage に格納する活性化関数
+    # setting_Function に登録する活性化関数
     ACT_FUNCTION = fn.LeakyReLU()
     OUTPUT_FUNCTION = fn.Softmax()
 
-    # CoefficientPackage に格納するパラメーター
+    # setting_Coefficient に登録するパラメーター
     ETA = 0.02  # 学習率
     L2_LAMBDA = 0.002  # L2正則化のペナルティ
     ALPHA = 0.9  # Momentum の慣性係数
@@ -65,7 +64,7 @@ def main():
             model.shift(X_batch, Y_batch)
         
         # 損失の記録と表示（毎エポックではなく一定間隔に）
-        if epoch % 100 == 0:
+        if epoch % 10 == 0:
             # 訓練データの一部で損失を近似（高速化のため）
             train_loss = model.loss(X_train_norm[:1000], Y_train[:1000])
             test_loss = model.loss(X_test_norm, Y_test)
@@ -75,7 +74,7 @@ def main():
             
             print(f"Epoch {epoch}, Train Loss: {train_loss:.4f}, Test Loss: {test_loss:.4f}")
             
-            if epoch % 500 == 0:
+            if epoch % 50 == 0:
                 plotter.show(model)
 
     end_time = time.time()
