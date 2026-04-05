@@ -1,9 +1,9 @@
 import numpy as np
 import function as fn
 
+# モデルの初期設定を行うクラス
 class ModelSetter:
-    def __init__(self, batch_size = None, x_data:np.ndarray = None, y_data: np.ndarray = None):
-        self.batch_size = batch_size
+    def __init__(self, x_data:np.ndarray = None, y_data: np.ndarray = None):
         self.x_data = x_data
         self.y_data = y_data
         self.is_not_flame_set = True
@@ -19,14 +19,10 @@ class ModelSetter:
         self.input_dim = input_dim
         self.output_dim = output_dim
         self.hidden_layer = hidden_layer
+        self.dep = len(hidden_layer)
         self.is_not_flame_set = False
 
-    def setting_Function(self, act_fn:fn.Function, output_fn:fn.OutputFunction):
-        if act_fn is None:
-            act_fn = fn.LeakyReLU()
-        if output_fn is None:
-            output_fn = fn.Softmax(self.batch_size)
-
+    def setting_Function(self, act_fn:fn.Function = fn.LeakyReLU(), output_fn:fn.OutputFunction = fn.Softmax()):
         self.act_fn = act_fn
         self.output_fn = output_fn
         self.is_not_function_set = False
@@ -37,19 +33,7 @@ class ModelSetter:
         self.alpha = alpha
         self.is_not_coefficient_set = False
 
-    def create_model(self):
-        if self.is_not_flame_set:
-            raise ValueError("Flame parameters not set. Please call setting_Flame() before creating the model.")
-        if self.is_not_function_set:
-            self.setting_Function()
-        if self.is_not_coefficient_set:
-            self.setting_Coefficient()
-        
-        return NeuralNetworkModel(self)
-        
-
-
-class NeuralNetworkModel:
+    
     def para_generation(self,head,tail):
         rng = np.random.default_rng()
         scale = self.act_fn.initialization(head, tail)
@@ -74,21 +58,35 @@ class NeuralNetworkModel:
         self.V_W = [np.zeros_like(w) for w in self.W]
         self.V_b = [np.zeros_like(b) for b in self.b]
 
-    def __init__(self, model_setter: ModelSetter):
-        #各層のニューロンの数
-        self.input_dim = model_setter.input_dim
-        self.output_dim = model_setter.output_dim        
-        hidden_layer = model_setter.hidden_layer
-        self.dep = len(hidden_layer)
+    def create_model(self):
+        if self.is_not_flame_set:
+            raise ValueError("Flame parameters not set. Please call setting_Flame() before creating the model.")
+        if self.is_not_function_set:
+            self.setting_Function()
+        if self.is_not_coefficient_set:
+            self.setting_Coefficient()
+        
+        self.para_setting()
+        return NeuralNetworkModel(self)
+        
 
-        self.act_fn = model_setter.act_fn # 隠れ層の活性化関数
-        self.output_fn = model_setter.output_fn # 出力層の活性化関数
+# ニューラルネットワークのモデルクラス
+class NeuralNetworkModel:
+    def __init__(self, setter: ModelSetter):
+        # モデルのパラメータを ModelSetter から受け取る
+        self.W = setter.W
+        self.b = setter.b
+        self.V_W = setter.V_W
+        self.V_b = setter.V_b
 
-        self.eta = model_setter.eta # b と W の学習率
-        self.l2_lambda = model_setter.l2_lambda # L2正則化のペナルティ
-        self.alpha = model_setter.alpha # 慣性係数
+        self.dep = setter.dep
 
-        self.para_setting(hidden_layer)
+        self.act_fn = setter.act_fn # 隠れ層の活性化関数
+        self.output_fn = setter.output_fn # 出力層の活性化関数
+
+        self.eta = setter.eta # b と W の学習率
+        self.l2_lambda = setter.l2_lambda # L2正則化のペナルティ
+        self.alpha = setter.alpha # 慣性係数
 
         #グラフ作成用の損失記録
         self.train_loss_history = [] 
@@ -108,22 +106,19 @@ class NeuralNetworkModel:
         self.P = o_fn.value(Z)        
 
     def upd_dW_db(self, A, dZ, threshold = 1.0):        
-        _dW = []
-        _db = []
+        self.dW = []
+        self.db = []
         L = self.dep
         for i in range(L+1):
             dw = A[i].T @ dZ[i]
             dw += self.l2_lambda * self.W[i]
             
             # --- 勾配クリッピングを追加 ---
-            # dw が -1.0 ～ 1.0 の範囲に収まるように制限
             dw_clipped = np.clip(dw, -threshold, threshold)
             
-            _dW.append(dw_clipped)
+            self.dW.append(dw_clipped)
             db = np.sum(dZ[i], axis=0)
-            _db.append(db)
-        self.dW = _dW
-        self.db = _db
+            self.db.append(db)
 
 
     def grad(self, X, Y):
@@ -141,18 +136,16 @@ class NeuralNetworkModel:
 
         self.upd_dW_db(self.A, dZ)
 
-    def new_W(self, i):
+    def upd_W(self, i):
         # 速度 V_W の更新: V = α*V - η*dW
         self.V_W[i] = self.alpha * self.V_W[i] - self.eta * self.dW[i]
-        # 重み W の更新: W = W + V
-        _new_W = self.W[i] + self.V_W[i]
-        return _new_W
+        # 重み W の更新: W += V
+        self.W[i] += self.V_W[i]
     
-    def new_b(self, i):
+    def upd_b(self, i):
         # バイアス b も同様に速度 V_b を更新
         self.V_b[i] = self.alpha * self.V_b[i] - self.eta * self.db[i]
-        _new_b = self.b[i] + self.V_b[i]
-        return _new_b
+        self.b[i] += self.V_b[i]
 
     def shift(self, X, Y):
         # 勾配を計算
@@ -160,13 +153,9 @@ class NeuralNetworkModel:
 
         # パラメータの更新
         L = self.dep
-        W = []
-        b = []
         for i in range(L+1):
-            W.append(self.new_W(i))
-            b.append(self.new_b(i))
-        self.W = W
-        self.b = b
+            self.upd_W(i)
+            self.upd_b(i)
 
 
     def predict(self, X):

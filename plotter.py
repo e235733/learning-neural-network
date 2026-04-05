@@ -1,9 +1,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from data_loader import DataLoader
+from data_loader import DataNormalizer
 
 class Plotter:
-    def __init__(self, interval, normalize:DataLoader.normalize, X, Y, is_detail_mode=False):
+    def __init__(self, interval, normalize:DataNormalizer.normalize, X, Y, is_detail_mode=False):
         self.interval = interval
         self.normalize = normalize
         self.X = X

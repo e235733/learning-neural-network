@@ -8,9 +8,6 @@ class DataLoader:
         self.shuffle = shuffle
         self.n_samples = X.shape[0]
 
-        self.mean = np.mean(X, axis=0)
-        self.std = np.std(X, axis=0) + 1e-8
-
         self.indices = np.arange(self.n_samples)
         self.reset()
 
@@ -20,9 +17,6 @@ class DataLoader:
         if self.shuffle:
             np.random.shuffle(self.indices)
 
-    # 全体の統計量を使った正規化
-    def normalize(self, data):
-        return (data - self.mean) / self.std
     
     def __len__(self):
         return int(np.ceil(self.n_samples / self.batch_size))
@@ -40,13 +34,22 @@ class DataLoader:
         batch_indices = self.indices[self.current_idx:end_idx]
 
         batch_X = self.X[batch_indices]
-        norm_batch_X = self.normalize(batch_X)
         batch_Y = self.Y[batch_indices]
 
 
         self.current_idx = end_idx
 
-        return norm_batch_X, batch_Y
+        return batch_X, batch_Y
+    
+class DataNormalizer:
+    def __init__(self, data):
+        self.mean = np.mean(data, axis=0)
+        self.std = np.std(data, axis=0) + 1e-8
+
+    # 全体の統計量を使った正規化
+    def normalize(self, data):
+        return (data - self.mean) / self.std
+
 
 if __name__ == "__main__":
     from data_loader import DataLoader
