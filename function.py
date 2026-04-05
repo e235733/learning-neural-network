@@ -69,9 +69,6 @@ class LeakyReLU(Function):
 
 
 class OutputFunction(ABC):
-    def __init__(self, denominator):
-        self.denominator = denominator
-
     @abstractmethod
     def value(self, X):
         pass
@@ -84,10 +81,7 @@ class OutputFunction(ABC):
     def dLoss(self, P, Y):
         pass
 
-class Softmax(OutputFunction):
-    def __init__(self, batch_size):
-        super().__init__(batch_size)
-        
+class Softmax(OutputFunction):        
     def value(self, X):
         eps = 1e-15
         X_max = np.max(X, axis=1, keepdims=True)
@@ -100,18 +94,15 @@ class Softmax(OutputFunction):
         eps = 1e-15
         P_clipped = np.clip(P, eps, 1 - eps)
         logP = np.log(P_clipped)
-        batch_size = self.denominator
+        batch_size = P.shape[0]
         loss = -np.sum(Y * logP) / batch_size
         return loss
    
     def dLoss(self, P, Y):
-        batch_size = self.denominator
+        batch_size = P.shape[0]
         return (P - Y) / batch_size
     
-class Identity(OutputFunction):
-    def __init__(self, size_P):
-        super().__init__(size_P)
-    
+class Identity(OutputFunction):   
     def value(self, X):
         return X
     
@@ -119,5 +110,5 @@ class Identity(OutputFunction):
         return np.mean((P - Y)**2)
     
     def dLoss(self, P, Y):
-        size_P = self.denominator
+        size_P = P.size
         return 2*(P - Y) / size_P
