@@ -42,12 +42,12 @@ class ModelSetter:
         self.W.append(w)
         self.b.append(b)
 
-    def para_setting(self, hidden_layer):
+    def para_setting(self):
         #調整すべきパラメータb:切片(1×K),W:傾き(D×K)を隠れ層＋出力層の深さ(L+1)だけ作成    
         self.W = []
         self.b = []
         head = self.input_dim
-        for tail in hidden_layer:
+        for tail in self.hidden_layer:
             self.para_generation(head, tail)
             head = tail
         tail = self.output_dim
