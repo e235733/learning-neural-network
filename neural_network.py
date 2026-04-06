@@ -22,7 +22,12 @@ class ModelSetter:
         self.dep = len(hidden_layer)
         self.is_not_flame_set = False
 
-    def setting_Function(self, act_fn:fn.Function = fn.LeakyReLU(), output_fn:fn.OutputFunction = fn.Softmax()):
+    def setting_Function(self, act_fn:fn.Function = None, output_fn:fn.OutputFunction = None):
+        if act_fn is None:
+            act_fn = fn.Sigmoid()
+        if output_fn is None:
+            output_fn = fn.Softmax()
+        
         self.act_fn = act_fn
         self.output_fn = output_fn
         self.is_not_function_set = False
@@ -105,12 +110,12 @@ class NeuralNetworkModel:
         Z = self.A[L] @ self.W[L] + self.b[L]
         self.P = o_fn.value(Z)        
 
-    def upd_dW_db(self, A, dZ, threshold = 1.0):        
+    def upd_dW_db(self, A, dZ, threshold = 5.0):        
         self.dW = []
         self.db = []
         L = self.dep
         for i in range(L+1):
-            dw = A[i].T @ dZ[i]
+            dw = A[i].T @ dZ[i]           
             dw += self.l2_lambda * self.W[i]
             
             # --- 勾配クリッピングを追加 ---
