@@ -13,19 +13,20 @@ import time
 def main():
 
     NUM_DATA = 60000
-    NUM_EPOCHS = 150
-    BATCH_SIZE = 1024
+    NUM_EPOCHS = 200
+    BATCH_SIZE = 512
 
     # setting_Flame に  登録するパラメーター
-    HIDDEN_LAYER = [64, 64, 32, 32]
+    HIDDEN_LAYER = [128, 128, 64, 64, 32, 32]
     
     # setting_Function に登録する活性化関数
     ACT_FUNCTION = fn.LeakyReLU()
     OUTPUT_FUNCTION = fn.Softmax()
 
     # setting_Coefficient に登録するパラメーター
-    ETA = 0.02  # 学習率
-    L2_LAMBDA = 0.002  # L2正則化のペナルティ
+    ETA = 0.01  # 学習率
+    
+    L2_LAMBDA = 0.005  # L2正則化のペナルティ
     ALPHA = 0.9  # Momentum の慣性係数
 
     #チェック時やデバッグ時はTrue
@@ -33,9 +34,12 @@ def main():
 
     # --- データの準備 ---
     all_data = MnistDataset(NUM_DATA)
-    # データを訓練用(80%)とテスト用(20%)に分割
+
+    # テストデータのサイズを制限（最大1000サンプル or 20%）
+    test_data_size = min(int(0.2 * NUM_DATA), 1000)
+    # データを訓練用とテスト用に分割
     X_train, X_test, Y_train, Y_test = train_test_split(
-        all_data.X, all_data.Y, test_size=0.2, random_state=42
+        all_data.X, all_data.Y, test_size=test_data_size, random_state=42
     )
 
     normalizer = DataNormalizer(X_train)
@@ -66,7 +70,7 @@ def main():
         # 損失の記録と表示（毎エポックではなく一定間隔に）
         if epoch % 10 == 0:
             # 訓練データの一部で損失を近似（高速化のため）
-            train_loss = model.loss(X_train_norm[:1000], Y_train[:1000])
+            train_loss = model.loss(X_train_norm[:test_data_size], Y_train[:test_data_size])
             test_loss = model.loss(X_test_norm, Y_test)
             
             model.train_loss_history.append(train_loss)
