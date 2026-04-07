@@ -3,9 +3,8 @@ import numpy as np
 from data_loader import DataNormalizer
 
 class Plotter:
-    def __init__(self, interval, normalize:DataNormalizer.normalize, X, Y, is_detail_mode=False):
+    def __init__(self, interval, X, Y, is_detail_mode=False):
         self.interval = interval
-        self.normalize = normalize
         self.X = X
         # one-hot to integer labels
         self.Y_labels = np.argmax(Y, axis=1) if Y.ndim > 1 else Y
@@ -85,6 +84,72 @@ class Plotter:
             ax_dw.bar(layer_labels, grad_means, color='orange')
         ax_dw.set_title("Mean Gradient Magnitude (|dW|)")
 
+    # 混同行列と誤認識データの詳細を表示する
+    def show_evaluation(self, model, X_test, Y_test):
+        from sklearn.metrics import confusion_matrix
+        import seaborn as sns
+        import matplotlib.gridspec as gridspec
+
+        probs = model.predict(X_test)
+        Y_pred = np.argmax(probs, axis=1)
+        Y_true = np.argmax(Y_test, axis=1) if Y_test.ndim > 1 else Y_test
+
+        # 誤認識したデータのインデックスを取得
+        error_indices = np.where(Y_pred != Y_true)[0]
+
+        fig_eval = plt.figure(num="Evaluation Results", figsize=(14, 6))
+        gs = gridspec.GridSpec(3, 6, figure=fig_eval)
+
+        # 左側：混同行列
+        ax_cm = fig_eval.add_subplot(gs[:, :3])
+        cm = confusion_matrix(Y_true, Y_pred)
+        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=ax_cm, cbar=False)
+        ax_cm.set_title("Confusion Matrix", fontsize=14)
+        ax_cm.set_xlabel("Predicted Label")
+        ax_cm.set_ylabel("True Label")
+
+        # 右側：誤認識データ
+        if len(error_indices) == 0:
+            ax_msg = fig_eval.add_subplot(gs[:, 3:])
+            ax_msg.text(0.5, 0.5, "Perfect! 0 Errors.", ha='center', va='center', fontsize=20)
+            ax_msg.axis('off')
+            return
+
+        # MNIST の場合 (784次元)
+        if self.input_dim == 784:
+            img_size = int(np.sqrt(self.input_dim))
+            num_show = min(9, len(error_indices))
+            
+            for i in range(num_show):
+                idx = error_indices[i]
+                row = i // 3
+                col = 3 + (i % 3)
+                
+                ax_img = fig_eval.add_subplot(gs[row, col])
+                ax_img.imshow(X_test[idx].reshape(img_size, img_size), cmap='gray')
+                ax_img.set_title(f"T:{Y_true[idx]} $\\rightarrow$ P:{Y_pred[idx]}", color='red', fontsize=10)
+                ax_img.axis('off')
+                
+        # 2次元データの場合
+        elif self.input_dim == 2:
+            ax_err = fig_eval.add_subplot(gs[:, 3:])
+            ax_err.scatter(X_test[:, 0], X_test[:, 1], c=Y_true, cmap='tab10', alpha=0.2, label='All Test Data')
+            ax_err.scatter(X_test[error_indices, 0], X_test[error_indices, 1], 
+                           color='red', marker='x', s=100, linewidth=2, label='Misclassified')
+            ax_err.set_title("Error Distribution", fontsize=14)
+            ax_err.legend()
+            
+        else:
+            # 1次元やその他の次元の場合
+            ax_txt = fig_eval.add_subplot(gs[:, 3:])
+            ax_txt.axis('off')
+            msg = "Misclassified Samples (Top 10):\n\n"
+            num_show = min(10, len(error_indices))
+            for i in range(num_show):
+                idx = error_indices[i]
+                msg += f"Index {idx}: True={Y_true[idx]}, Pred={Y_pred[idx]}\n"
+            ax_txt.text(0.1, 0.9, msg, va='top', fontfamily='monospace')
+
     def finish(self):
         plt.show()
 
@@ -92,9 +157,8 @@ class Plotter:
         ax.set_title(f"Decision Boundary (1D, {self.num_classes} classes)")
         x_min, x_max = self.X[:, 0].min() - 0.5, self.X[:, 0].max() + 0.5
         xx = np.linspace(x_min, x_max, 100).reshape(-1, 1)
-        norm_xx = self.normalize(xx)
         
-        probs = model.predict(norm_xx)
+        probs = model.predict(xx)
         
         cmap = plt.get_cmap('tab10')
         for c in range(self.num_classes):
@@ -117,9 +181,8 @@ class Plotter:
         y_min, y_max = self.X[:, 1].min() - 0.5, self.X[:, 1].max() + 0.5
         xx, yy = np.meshgrid(np.linspace(x_min, x_max, 50), np.linspace(y_min, y_max, 50))
         grid_points = np.c_[xx.ravel(), yy.ravel()]
-        norm_grid_points = self.normalize(grid_points)
         
-        probs = model.predict(norm_grid_points)
+        probs = model.predict(grid_points)
         predicted_classes = np.argmax(probs, axis=1)
         predicted_grid = predicted_classes.reshape(xx.shape)
 
