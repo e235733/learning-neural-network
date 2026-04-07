@@ -12,7 +12,7 @@ import time
 
 def main():
 
-    NUM_DATA = 60000
+    NUM_DATA = 70000
     NUM_EPOCHS = 200
     BATCH_SIZE = 512
 
@@ -35,12 +35,19 @@ def main():
     # --- データの準備 ---
     all_data = MnistDataset(NUM_DATA)
 
-    # テストデータのサイズを制限（最大1000サンプル or 20%）
-    test_data_size = min(int(0.2 * NUM_DATA), 1000)
-    # データを訓練用とテスト用に分割
+    X_train = all_data.X_train
+    Y_train = all_data.Y_train
+    X_test = all_data.X_test
+    Y_test = all_data.Y_test
+
+    # テストデータのサイズ
+    test_data_size = 10000
+
+    """ データをランダムに訓練用とテスト用に分割
     X_train, X_test, Y_train, Y_test = train_test_split(
         all_data.X, all_data.Y, test_size=test_data_size, random_state=42
     )
+    """
 
     normalizer = DataNormalizer(X_train)
     X_train_norm = normalizer.normalize(X_train)
