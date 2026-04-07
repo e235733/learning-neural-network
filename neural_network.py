@@ -1,174 +1,126 @@
 import numpy as np
 import function as fn
 
-# モデルの初期設定を行うクラス
-class ModelSetter:
-    def __init__(self, x_data:np.ndarray = None, y_data: np.ndarray = None):
-        self.x_data = x_data
-        self.y_data = y_data
-        self.is_not_flame_set = True
-        self.is_not_function_set = True
-        self.is_not_coefficient_set = True
-
-    def setting_Flame(self, hidden_layer, input_dim = None, output_dim = None):
-        if input_dim is None:
-            input_dim = self.x_data.shape[1]
-        if output_dim is None:
-            output_dim = self.y_data.shape[1]
-
-        self.input_dim = input_dim
-        self.output_dim = output_dim
-        self.hidden_layer = hidden_layer
-        self.dep = len(hidden_layer)
-        self.is_not_flame_set = False
-
-    def setting_Function(self, act_fn:fn.Function = None, output_fn:fn.OutputFunction = None):
-        if act_fn is None:
-            act_fn = fn.Sigmoid()
-        if output_fn is None:
-            output_fn = fn.Softmax()
-        
-        self.act_fn = act_fn
-        self.output_fn = output_fn
-        self.is_not_function_set = False
-
-    def setting_Coefficient(self, eta = 0.02, l2_lambda = 0.01, alpha = 0.9):
-        self.eta = eta
-        self.l2_lambda = l2_lambda
-        self.alpha = alpha
-        self.is_not_coefficient_set = False
-
-    
-    def para_generation(self,head,tail):
-        rng = np.random.default_rng()
-        scale = self.act_fn.initialization(head, tail)
-        w = rng.standard_normal((head, tail)) * scale
-        b = np.zeros(tail)
-        self.W.append(w)
-        self.b.append(b)
-
-    def para_setting(self):
-        #調整すべきパラメータb:切片(1×K),W:傾き(D×K)を隠れ層＋出力層の深さ(L+1)だけ作成    
-        self.W = []
-        self.b = []
-        head = self.input_dim
-        for tail in self.hidden_layer:
-            self.para_generation(head, tail)
-            head = tail
-        tail = self.output_dim
-        self.para_generation(head, tail)
-
-        #新しく Momentum 用の変数として速度 V (Velocity) を追加
-        # W と b と同じ形状のゼロ配列（速度）を作成
-        self.V_W = [np.zeros_like(w) for w in self.W]
-        self.V_b = [np.zeros_like(b) for b in self.b]
-
-    def create_model(self):
-        if self.is_not_flame_set:
-            raise ValueError("Flame parameters not set. Please call setting_Flame() before creating the model.")
-        if self.is_not_function_set:
-            self.setting_Function()
-        if self.is_not_coefficient_set:
-            self.setting_Coefficient()
-        
-        self.para_setting()
-        return NeuralNetworkModel(self)
-        
-
 # ニューラルネットワークのモデルクラス
 class NeuralNetworkModel:
-    def __init__(self, setter: ModelSetter):
-        # モデルのパラメータを ModelSetter から受け取る
-        self.W = setter.W
-        self.b = setter.b
-        self.V_W = setter.V_W
-        self.V_b = setter.V_b
+    def __init__(self, input_dim, hidden_layer, output_dim, act_fn=fn.LeakyReLU(), output_fn=fn.Softmax(), eta=0.01, l2_lambda=0.005, alpha=0.9):
+        
+        self.input_dim = input_dim
+        self.hidden_layer = hidden_layer
+        self.output_dim = output_dim
+        self.depth = len(hidden_layer)
 
-        self.dep = setter.dep
+        self.act_fn = act_fn # 隠れ層の活性化関数
+        self.output_fn = output_fn # 出力層の活性化関数
 
-        self.act_fn = setter.act_fn # 隠れ層の活性化関数
-        self.output_fn = setter.output_fn # 出力層の活性化関数
+        self.eta = eta # 学習率
+        self.l2_lambda = l2_lambda # L2正則化のペナルティ
+        self.alpha = alpha # 慣性係数
 
-        self.eta = setter.eta # b と W の学習率
-        self.l2_lambda = setter.l2_lambda # L2正則化のペナルティ
-        self.alpha = setter.alpha # 慣性係数
+        # パラメータの初期化
+        self._initialize_parameters()
 
-        #グラフ作成用の損失記録
+        # グラフ作成用の損失記録
         self.train_loss_history = [] 
         self.test_loss_history = []
+
+    def _initialize_parameters(self):
+        self.W = []
+        self.b = []
+        
+        rng = np.random.default_rng()
+        
+        layers = [self.input_dim] + self.hidden_layer + [self.output_dim]
+        
+        for i in range(len(layers) - 1):
+            head = layers[i]
+            tail = layers[i+1]
+            
+            # 活性化関数に基づいた初期化スケールを取得
+            scale = self.act_fn.initialization(head, tail)
+            
+            w = rng.standard_normal((head, tail)) * scale
+            b = np.zeros(tail)
+            
+            self.W.append(w)
+            self.b.append(b)
+
+        # Momentum 用の速度 V をゼロ初期化
+        self.V_w = [np.zeros_like(w) for w in self.W]
+        self.V_b = [np.zeros_like(b) for b in self.b]
     
     def upd_A_P(self, X):       
-        # A の更新
-        fn = self.act_fn
+        # A の更新 
+        fn_act = self.act_fn
         self.A = [X]
-        for i in range(self.dep):
+        for i in range(self.depth):
             Z = self.A[i] @ self.W[i] + self.b[i]
-            self.A.append(fn.value(Z))
-        # P の更新
+            self.A.append(fn_act.value(Z))
+        # P の更新 
         o_fn = self.output_fn        
-        L = self.dep
+        L = self.depth
         Z = self.A[L] @ self.W[L] + self.b[L]
         self.P = o_fn.value(Z)        
 
-    def upd_dW_db(self, A, dZ, threshold = 5.0):        
+    def upd_dW_db(self, A, dZ, threshold=5.0):        
         self.dW = []
         self.db = []
-        L = self.dep
+        L = self.depth
         for i in range(L+1):
             dw = A[i].T @ dZ[i]           
             dw += self.l2_lambda * self.W[i]
             
-            # --- 勾配クリッピングを追加 ---
+            # 勾配クリッピング
             dw_clipped = np.clip(dw, -threshold, threshold)
             
             self.dW.append(dw_clipped)
             db = np.sum(dZ[i], axis=0)
             self.db.append(db)
 
-
     def grad(self, X, Y):
+        # 前向き伝播
         self.upd_A_P(X)
         dZ = []
 
+        # 逆向き伝播
         dz = self.output_fn.dLoss(self.P, Y)
         dZ.append(dz)
-        for i in range(self.dep, 0, -1):
+        for i in range(self.depth, 0, -1):
             da = dz @ self.W[i].T
             diff = self.act_fn.diff(self.A[i])
             dz = diff * da
             dZ.append(dz)
         dZ.reverse()
 
+        # 勾配の計算
         self.upd_dW_db(self.A, dZ)
 
     def upd_W(self, i):
-        # 速度 V_W の更新: V = α*V - η*dW
-        self.V_W[i] = self.alpha * self.V_W[i] - self.eta * self.dW[i]
+        # 速度 V_w の更新: V = α*V - η*dW
+        self.V_w[i] = self.alpha * self.V_w[i] - self.eta * self.dW[i]
         # 重み W の更新: W += V
-        self.W[i] += self.V_W[i]
+        self.W[i] += self.V_w[i]
     
     def upd_b(self, i):
-        # バイアス b も同様に速度 V_b を更新
+        # バイアス b の更新
         self.V_b[i] = self.alpha * self.V_b[i] - self.eta * self.db[i]
         self.b[i] += self.V_b[i]
 
     def shift(self, X, Y):
-        # 勾配を計算
+        # 勾配を計算してパラメータを更新
         self.grad(X, Y)
 
-        # パラメータの更新
-        L = self.dep
+        L = self.depth
         for i in range(L+1):
             self.upd_W(i)
             self.upd_b(i)
 
-
     def predict(self, X):
         A = X       
-        for i in range(self.dep):
+        for i in range(self.depth):
             Z = A @ self.W[i] + self.b[i]
             A = self.act_fn.value(Z)
-        i = self.dep
+        i = self.depth
         Z = A @ self.W[i] + self.b[i]
         return self.output_fn.value(Z)
     
@@ -186,32 +138,23 @@ class NeuralNetworkModel:
 
     
 if __name__ == "__main__":
-    from xor_dataset import XorDataset
     import function as fn
 
-    DATA_SIZE = 10
+    # 簡易テスト
+    X = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
+    Y = np.array([[1, 0], [0, 1], [0, 1], [1, 0]]) # XOR っぽいラベル
 
-    ETA = 0.1
-    L2_LAMBDA = 0.005
+    model = NeuralNetworkModel(
+        input_dim=2,
+        hidden_layer=[4, 4],
+        output_dim=2,
+        act_fn=fn.Sigmoid(),
+        output_fn=fn.Softmax(),
+        eta=0.1
+    )
 
-    HIDDEN_LAYER = [4, 4]
-
-    ACT_FN = fn.Sigmoid()
-    OUTPUT_FN = fn.Softmax(DATA_SIZE)
-
-    data = XorDataset(10)
-    print("data X, Y:")
-    print(data.X)
-    print(data.Y)
-
-    setter = ModelSetter()
-    setter.setting_Flame(2, 2, HIDDEN_LAYER)
-    setter.setting_Function(ACT_FN, OUTPUT_FN)
-    setter.setting_Coefficient(ETA, L2_LAMBDA, 0.9)
-    model = setter.create_model()
-
-    print(model.W)
-    model.shift()
-    print(model.W)
-    print("model A")
-    print(model.A)
+    print("Initial Loss:", model.loss(X, Y))
+    for _ in range(100):
+        model.shift(X, Y)
+    print("Loss after 100 steps:", model.loss(X, Y))
+    print("Predictions:\n", model.predict(X))
