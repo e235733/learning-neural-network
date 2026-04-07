@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
 
-class Function(ABC):
+class ActivationFunction(ABC):
 
     @abstractmethod
     def initialization(self, head: int, tail: int) -> float:
@@ -15,7 +15,7 @@ class Function(ABC):
     def diff(self, Y):
         pass
 
-class Sigmoid(Function):
+class Sigmoid(ActivationFunction):
     def initialization(self, head, tail):
         return np.sqrt(2 / (head + tail))
 
@@ -28,7 +28,7 @@ class Sigmoid(Function):
     def diff(self, Y):
         return Y - Y**2
     
-class Tanh(Function):
+class Tanh(ActivationFunction):
     def initialization(self, head, tail):
         return np.sqrt(2 / (head + tail))
 
@@ -38,7 +38,7 @@ class Tanh(Function):
     def diff(self, Y):
         return 1 - Y**2
     
-class ReLU(Function):
+class ReLU(ActivationFunction):
     def initialization(self, head, tail):
         return np.sqrt(2 / head)
     
@@ -49,7 +49,7 @@ class ReLU(Function):
     def diff(self, Y):
         return (Y >= 0).astype(float)
     
-class LeakyReLU(Function):
+class LeakyReLU(ActivationFunction):
     def __init__(self, alpha=0.01):
         self.alpha = alpha
 

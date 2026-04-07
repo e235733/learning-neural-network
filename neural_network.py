@@ -3,7 +3,10 @@ import function as fn
 
 # ニューラルネットワークのモデルクラス
 class NeuralNetworkModel:
-    def __init__(self, input_dim, hidden_layer, output_dim, act_fn=fn.LeakyReLU(), output_fn=fn.Softmax(), eta=0.01, l2_lambda=0.005, alpha=0.9):
+    def __init__(self, input_dim, hidden_layer, output_dim,
+                act_fn:fn.ActivationFunction = fn.LeakyReLU(),
+                output_fn:fn.OutputFunction = fn.Softmax(),
+                eta=0.01, l2_lambda=0.005, alpha=0.9):
         
         self.input_dim = input_dim
         self.hidden_layer = hidden_layer
@@ -116,6 +119,16 @@ class NeuralNetworkModel:
 
         return l2_penalty + base_loss
     
+    def log_train_loss(self, X_train, Y_train):
+        train_loss = self.loss(X_train, Y_train)
+        self.train_loss_history.append(train_loss)
+        return train_loss
+
+    def log_test_loss(self, X_test, Y_test):
+        test_loss = self.loss(X_test, Y_test)
+        self.test_loss_history.append(test_loss)
+        return test_loss
+
     def evaluate_accuracy(self, X, Y: np.ndarray):
         # 予測と正解を比較して精度を計算
         predicted_classes = np.argmax(self.predict(X), axis=1)

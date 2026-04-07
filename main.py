@@ -82,15 +82,11 @@ def main():
         
         # 損失の記録と表示
         if epoch % 10 == 0:
-            train_loss = model.loss(X_train_norm[:test_data_size], Y_train[:test_data_size])
-            test_loss = model.loss(X_test_norm, Y_test)
-            
-            model.train_loss_history.append(train_loss)
-            model.test_loss_history.append(test_loss)
+            train_loss = model.log_train_loss(X_train_norm[:test_data_size], Y_train[:test_data_size])
+            test_loss = model.log_test_loss(X_test_norm, Y_test)
             
             print(f"Epoch {epoch}, Train Loss: {train_loss:.4f}, Test Loss: {test_loss:.4f}")
-            if epoch % 50 == 0:
-                plotter.show(model)
+            plotter.show(model)
 
     end_time = time.time()
             
