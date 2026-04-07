@@ -1,99 +1,98 @@
 import numpy as np
-from neural_network import ModelSetter
+from abstract_model import Model
 
 # 畳み込みニューラルネットワークのモデルクラス
-class ConvolutionalNeuralNetwork:
-    def __init__(self, model_setter: ModelSetter):
-        if model_setter.is_not_flame_set or model_setter.is_not_function_set or model_setter.is_not_coefficient_set:
-            raise ValueError("Model parameters not fully set. Please ensure all settings are configured before creating the model.")
-        # モデルのパラメータを ModelSetter から受け取る
-        self.W = model_setter.W
-        self.b = model_setter.b
-        self.V_W = model_setter.V_W
-        self.V_b = model_setter.V_b
-        self.dep = model_setter.dep
-        self.act_fn = model_setter.act_fn # 隠れ層の活性化関数
-        self.output_fn = model_setter.output_fn # 出力層の活性化関数
-        self.eta = model_setter.eta # b と W の学習率
-        self.l2_lambda = model_setter.l2_lambda # L2正則化のペナルティ
-        self.alpha = model_setter.alpha # 慣性係数
+class ConvolutionalNeuralNetworkModel(Model):
+    def _initialize_parameters(self):
+        # 畳み込み層のパラメータの初期化
+        self.conv_W = []
+        self.conv_b = []
+        
+        rng = np.random.default_rng()
+        
+        # 畳み込み層の構成（例: 2層の畳み込み層）
+        conv_layer_configs = [
+            (3, 16, 3),  # (入力チャネル数, 出力チャネル数, カーネルサイズ)
+            (16, 32, 3)
+        ]
+        
+        for in_channels, out_channels, kernel_size in conv_layer_configs:
+            scale = self.act_fn.initialization(in_channels * kernel_size * kernel_size, out_channels * kernel_size * kernel_size)
+            w = rng.standard_normal((out_channels, in_channels, kernel_size, kernel_size)) * scale
+            b = np.zeros(out_channels)
+            self.conv_W.append(w)
+            self.conv_b.append(b)
 
-    def forward(self, X):
-        # フォワードパスの実装
-        self.A = [X]
-        for i in range(self.dep):
-            Z = self.A[i] @ self.W[i] + self.b[i]
-            self.A.append(self.act_fn.value(Z))
-        Z = self.A[self.dep] @ self.W[self.dep] + self.b[self.dep]
+        # 全結合層のパラメータの初期化
+        layers = [32 * 7 * 7] + self.hidden_layer + [self.output_dim]
+        
+        for i in range(len(layers) - 1):
+            head = layers[i]
+            tail = layers[i+1]
+            
+            scale = self.act_fn.initialization(head, tail)
+            
+            w = rng.standard_normal((head, tail)) * scale
+            b = np.zeros(tail)
+            
+            self.W.append(w)
+            self.b.append(b)
+
+        # Momentum 用の速度 V をゼロ初期化
+        self.V_conv_W = [np.zeros_like(w) for w in self.conv_W]
+        self.V_conv_b = [np.zeros_like(b) for b in self.conv_b]
+        self.V_W = [np.zeros_like(w) for w in self.W]
+        self.V_b = [np.zeros_like(b) for b in self.b]
+
+    def convolution(self, A, w, b):
+        # 畳み込み演算の実装（例: 単純な畳み込み）
+        # ここでは簡略化のため、実際の畳み込み演算は省略
+        return A  # ダミーの出力
+    
+    def pooling(self, A):
+        # プーリング演算の実装（例: 最大プーリング）
+        # ここでは簡略化のため、実際のプーリング演算は省略
+        return A  # ダミーの出力
+
+    def calc_forward_propagation(self, X: np.ndarray):
+        # 前向き伝播の実装（例: 畳み込み層 → 活性化関数 → プーリング → 全結合層）
+        # 畳み込み層の処理
+        A = X
+        for w, b in zip(self.conv_W, self.conv_b):
+            A = self.convolution(A, w, b)
+            A = self.act_fn.value(A)
+            A = self.pooling(A)
+        
+        # 全結合層の処理
+        A = A.reshape(A.shape[0], -1)  # フラット化
+        for i in range(self.depth):
+            Z = A @ self.W[i] + self.b[i]
+            A = self.act_fn.value(Z)
+        Z = A @ self.W[self.depth] + self.b[self.depth]
         self.P = self.output_fn.value(Z)
 
-    def backward(self, Y):
-        # バックワードパスの実装
-        self.dW = []
-        self.db = []
-        L = self.dep
-        dZ = self.output_fn.derivative(self.P, Y)
-        for i in range(L, -1, -1):
-            dw = self.A[i].T @ dZ + self.l2_lambda * self.W[i]
-            db = np.sum(dZ, axis=0)
-            self.dW.append(dw)
-            self.db.append(db)
-            if i > 0:
-                dA_prev = dZ @ self.W[i].T
-                dZ = dA_prev * self.act_fn.derivative(self.A[i])
-        self.dW.reverse()
-        self.db.reverse()
+    def calc_backward_propagation(self, Y):
+        # 逆向き伝播の実装（例: 全結合層 → プーリング → 畳み込み層）
+        # ここでは簡略化のため、実際の逆伝播演算は省略
+        pass
 
     def update_parameters(self):
         # パラメータの更新
-        for i in range(self.dep + 1):
+        for i in range(self.depth + 1):
             self.V_W[i] = self.alpha * self.V_W[i] - self.eta * self.dW[i]
             self.V_b[i] = self.alpha * self.V_b[i] - self.eta * self.db[i]
             self.W[i] += self.V_W[i]
             self.b[i] += self.V_b[i]
 
     def predict(self, X):
-        # 予測の実装
+        # 予測の実装（例: 前向き伝播を通じてクラス確率を出力）
         A = X
-        for i in range(self.dep):
+        for w, b in zip(self.conv_W, self.conv_b):
+            A = self.act_fn.value(self.convolution(A, w, b))
+            A = self.pooling(A)
+        A = A.reshape(A.shape[0], -1)  # フラット化
+        for i in range(self.depth):
             Z = A @ self.W[i] + self.b[i]
             A = self.act_fn.value(Z)
-        Z = A @ self.W[self.dep] + self.b[self.dep]
-        P = self.output_fn.value(Z)
-        return P
-
-    def loss(self, X, Y):
-        # 損失関数の実装（例: クロスエントロピー損失）
-        self.forward(X)
-        m = Y.shape[0]
-        log_likelihood = -np.log(self.P[range(m), Y])
-        loss = np.sum(log_likelihood) / m
-        return loss
-    
-    def shift(self, X, Y):
-        # 勾配を計算してパラメータを更新
-        self.backward(Y)
-        self.update_parameters()
-    
-    def train(self, X, Y, epochs):
-        for _ in range(epochs):
-            self.shift(X, Y)
-    
-    def evaluate_accuracy(self, X, Y: np.ndarray):
-        # 予測と正解を比較して精度を計算
-        predicted_classes = np.argmax(self.predict(X), axis=1)
-        Y_labels = np.argmax(Y, axis=1) if Y.ndim > 1 else Y
-        accuracy = np.mean(predicted_classes == Y_labels)
-        return accuracy
-    
-    def save_model(self, file_path):
-        # モデルの保存（例: パラメータをファイルに保存）
-        np.savez(file_path, W=self.W, b=self.b, V_W=self.V_W, V_b=self.V_b)
-    
-    def load_model(self, file_path):
-        # モデルの読み込み（例: ファイルからパラメータを読み込む）
-        data = np.load(file_path)
-        self.W = data['W']
-        self.b = data['b']
-        self.V_W = data['V_W']
-        self.V_b = data['V_b']
+        Z = A @ self.W[self.depth] + self.b[self.depth]
+        return self.output_fn.value(Z)
