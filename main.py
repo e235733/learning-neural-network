@@ -17,7 +17,7 @@ def main():
     BATCH_SIZE = 512
 
     # setting_Flame に  登録するパラメーター
-    HIDDEN_LAYER = [128, 128, 64, 64, 32, 32]
+    HIDDEN_LAYER = [256, 64, 16]
     
     # setting_Function に登録する活性化関数
     ACT_FUNCTION = fn.LeakyReLU()
@@ -62,8 +62,8 @@ def main():
     setter.setting_Coefficient(ETA, L2_LAMBDA, ALPHA)
     model = setter.create_model()
     
-    # プロッターには訓練データの一部（可視化用）を渡す
-    plotter = Plotter(0.1, normalizer.normalize, X_train[:500], Y_train[:500], IS_DETAIL_MODE)
+    # プロッターの初期化（正規化済みのデータを渡す）
+    plotter = Plotter(0.1, X_train_norm[:500], Y_train[:500], IS_DETAIL_MODE)
 
     print(f"Start training: {len(X_train)} samples, {len(train_loader)} batches per epoch")
 
@@ -91,6 +91,7 @@ def main():
     end_time = time.time()
             
     plotter.show(model)
+    plotter.show_evaluation(model, X_test_norm, Y_test)
 
     # 訓練データの正解率
     Y_train_pred = np.argmax(model.predict(X_train_norm), axis=1)
