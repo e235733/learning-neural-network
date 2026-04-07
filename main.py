@@ -6,6 +6,7 @@ from data_loader import DataLoader, DataNormalizer
 from neural_network import NeuralNetworkModel
 import function as fn
 import numpy as np
+from sklearn.model_selection import train_test_split
 
 import time
 
@@ -16,7 +17,7 @@ def main():
     BATCH_SIZE = 512
 
     # モデル構成
-    HIDDEN_LAYER = [256, 64, 16]
+    HIDDEN_LAYER = [256, 128, 64, 16]
     
     # 活性化関数
     ACT_FUNCTION = fn.LeakyReLU()
@@ -41,11 +42,10 @@ def main():
     # テストデータのサイズ
     test_data_size = 10000
 
-    """ データをランダムに訓練用とテスト用に分割
-    X_train, X_test, Y_train, Y_test = train_test_split(
-        all_data.X, all_data.Y, test_size=test_data_size, random_state=42
-    )
-    """
+    # # データをランダムに訓練用とテスト用に分割
+    # X_train, X_test, Y_train, Y_test = train_test_split(
+    #     all_data.X, all_data.Y, test_size=test_data_size, random_state=42
+    # )
 
     normalizer = DataNormalizer(X_train)
     X_train_norm = normalizer.normalize(X_train)
@@ -89,8 +89,8 @@ def main():
             model.test_loss_history.append(test_loss)
             
             print(f"Epoch {epoch}, Train Loss: {train_loss:.4f}, Test Loss: {test_loss:.4f}")
-            
-            plotter.show(model)
+            if epoch % 50 == 0:
+                plotter.show(model)
 
     end_time = time.time()
             
@@ -98,14 +98,10 @@ def main():
     plotter.show_evaluation(model, X_test_norm, Y_test)
 
     # 最終的な正解率の計算
-    Y_train_pred = np.argmax(model.predict(X_train_norm), axis=1)
-    Y_train_labels = np.argmax(Y_train, axis=1) if Y_train.ndim > 1 else Y_train
-    train_accuracy = np.mean(Y_train_pred == Y_train_labels)
+    train_accuracy = model.evaluate_accuracy(X_train_norm, Y_train)
     print(f"Final Train Accuracy: {train_accuracy * 100:.2f}%")
 
-    Y_test_pred = np.argmax(model.predict(X_test_norm), axis=1)
-    Y_test_labels = np.argmax(Y_test, axis=1) if Y_test.ndim > 1 else Y_test
-    test_accuracy = np.mean(Y_test_pred == Y_test_labels)
+    test_accuracy = model.evaluate_accuracy(X_test_norm, Y_test)
     print(f"Final Test Accuracy: {test_accuracy * 100:.2f}%")
 
     plotter.finish()
