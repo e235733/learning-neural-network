@@ -13,7 +13,7 @@ import time
 def main():
 
     NUM_DATA = 70000
-    NUM_EPOCHS = 200
+    NUM_EPOCHS = 100
     BATCH_SIZE = 512
 
     # モデル構成

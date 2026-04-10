@@ -40,7 +40,7 @@ class NeuralNetworkModel:
             tail = layers[i+1]
             
             # 活性化関数に基づいた初期化スケールを取得
-            scale = self.act_fn.initialization(head, tail)
+            scale = self.act_fn.init_weight(head, tail)
             
             w = rng.standard_normal((head, tail)) * scale
             b = np.zeros(tail)

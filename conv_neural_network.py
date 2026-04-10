@@ -42,7 +42,7 @@ class ConvolutionalNeuralNetworkModel:
         ]
         
         for in_channels, out_channels, kernel_size in conv_layer_configs:
-            scale = self.act_fn.initialization(in_channels * kernel_size * kernel_size, out_channels * kernel_size * kernel_size)
+            scale = self.act_fn.init_wegit(in_channels * kernel_size * kernel_size, out_channels * kernel_size * kernel_size)
             w = rng.standard_normal((out_channels, in_channels, kernel_size, kernel_size)) * scale
             b = np.zeros(out_channels)
             self.conv_W.append(w)
@@ -55,7 +55,7 @@ class ConvolutionalNeuralNetworkModel:
             head = layers[i]
             tail = layers[i+1]
             
-            scale = self.act_fn.initialization(head, tail)
+            scale = self.act_fn.init_wegit(head, tail)
             
             w = rng.standard_normal((head, tail)) * scale
             b = np.zeros(tail)

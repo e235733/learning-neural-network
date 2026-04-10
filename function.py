@@ -4,7 +4,7 @@ import numpy as np
 class ActivationFunction(ABC):
 
     @abstractmethod
-    def initialization(self, head: int, tail: int) -> float:
+    def init_weight(self, head: int, tail: int) -> float:
         pass
 
     @abstractmethod
@@ -16,7 +16,7 @@ class ActivationFunction(ABC):
         pass
 
 class Sigmoid(ActivationFunction):
-    def initialization(self, head, tail):
+    def init_weight(self, head, tail):
         return np.sqrt(2 / (head + tail))
 
     def value(self, X):
@@ -29,7 +29,7 @@ class Sigmoid(ActivationFunction):
         return Y - Y**2
     
 class Tanh(ActivationFunction):
-    def initialization(self, head, tail):
+    def init_weight(self, head, tail):
         return np.sqrt(2 / (head + tail))
 
     def value(self, X):
@@ -39,7 +39,7 @@ class Tanh(ActivationFunction):
         return 1 - Y**2
     
 class ReLU(ActivationFunction):
-    def initialization(self, head, tail):
+    def init_weight(self, head, tail):
         return np.sqrt(2 / head)
     
     def value(self, X):
@@ -53,7 +53,7 @@ class LeakyReLU(ActivationFunction):
     def __init__(self, alpha=0.01):
         self.alpha = alpha
 
-    def initialization(self, head, tail):
+    def init_weight(self, head, tail):
         return np.sqrt(2 / head)
     
     def value(self, X):
