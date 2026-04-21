@@ -13,11 +13,11 @@ import time
 def main():
 
     NUM_DATA = 70000
-    NUM_EPOCHS = 100
+    NUM_EPOCHS = 20
     BATCH_SIZE = 512
 
     # モデル構成
-    HIDDEN_LAYER = [256, 128, 64, 16]
+    HIDDEN_LAYER = [256, 128, 64, 32]
     
     # 活性化関数
     ACT_FUNCTION = fn.LeakyReLU()
@@ -36,6 +36,7 @@ def main():
 
     X_train = all_data.X_train
     Y_train = all_data.Y_train
+    print(X_train[:5])
     X_test = all_data.X_test
     Y_test = all_data.Y_test
 
@@ -77,8 +78,10 @@ def main():
 
     for epoch in range(NUM_EPOCHS):
 
-        for X_batch, Y_batch in train_loader:
-            model.shift(X_batch, Y_batch)
+        if epoch < 15:
+            model.partial_fit(train_loader, eta=ETA * (15 - epoch))  # 最初の15エポックは急速に収束させる
+        else:
+            model.partial_fit(train_loader)
         
         # 損失の記録と表示
         if epoch % 10 == 0:
@@ -91,7 +94,7 @@ def main():
     end_time = time.time()
             
     plotter.show(model)
-    plotter.show_evaluation(model, X_test_norm, Y_test)
+    plotter.show_evaluation(model, X_test_norm, Y_test, X_test_norm) 
 
     # 最終的な正解率の計算
     train_accuracy = model.evaluate_accuracy(X_train_norm, Y_train)

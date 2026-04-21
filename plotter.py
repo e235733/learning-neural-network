@@ -85,7 +85,7 @@ class Plotter:
         ax_dw.set_title("Mean Gradient Magnitude (|dW|)")
 
     # 混同行列と誤認識データの詳細を表示する
-    def show_evaluation(self, model, X_test, Y_test):
+    def show_evaluation(self, model, X_test, Y_test, X_test_raw):
         from sklearn.metrics import confusion_matrix
         import seaborn as sns
         import matplotlib.gridspec as gridspec
@@ -126,7 +126,7 @@ class Plotter:
                 col = 3 + (i % 3)
                 
                 ax_img = fig_eval.add_subplot(gs[row, col])
-                ax_img.imshow(X_test[idx].reshape(img_size, img_size), cmap='gray')
+                ax_img.imshow(X_test_raw[idx].reshape(img_size, img_size), cmap='gray')
                 ax_img.set_title(f"T:{Y_true[idx]} $\\rightarrow$ P:{Y_pred[idx]}", color='red', fontsize=10)
                 ax_img.axis('off')
                 

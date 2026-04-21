@@ -84,20 +84,26 @@ class NeuralNetworkModel:
         self.dW.reverse()
         self.db.reverse()
 
-    def update_parameters(self):
+    def update_parameters(self, eta=None):
+        if eta is None:
+            eta = self.eta
         # パラメータの更新
         for i in range(self.depth + 1):
-            self.V_w[i] = self.alpha * self.V_w[i] - self.eta * self.dW[i]
-            self.V_b[i] = self.alpha * self.V_b[i] - self.eta * self.db[i]
+            self.V_w[i] = self.alpha * self.V_w[i] - eta * self.dW[i]
+            self.V_b[i] = self.alpha * self.V_b[i] - eta * self.db[i]
             self.W[i] += self.V_w[i]
             self.b[i] += self.V_b[i]
 
-    def shift(self, X, Y):
+    def shift(self, X, Y, eta=None):
         # 勾配を計算
         self.calc_forward_propagation(X)
         self.calc_backward_propagation(Y)
         # パラメータを更新
-        self.update_parameters()
+        self.update_parameters(eta)
+
+    def partial_fit(self, train_loader, eta=None):
+        for X_batch, Y_batch in train_loader:
+            self.shift(X_batch, Y_batch, eta)
 
     def predict(self, X):
         A = X       

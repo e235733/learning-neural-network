@@ -42,13 +42,16 @@ class DataLoader:
         return batch_X, batch_Y
     
 class DataNormalizer:
-    def __init__(self, data):
-        self.mean = np.mean(data, axis=0)
-        self.std = np.std(data, axis=0) + 1e-8
+    def __init__(self, data, threshold=3.0):
+        self.threshold = threshold
+        data_clipped = np.clip(data, -self.threshold, self.threshold) # 極端な値をクリップ
+        self.mean = np.mean(data_clipped)
+        self.std = np.std(data_clipped) + 1e-8
 
     # 全体の統計量を使った正規化
     def normalize(self, data):
-        return (data - self.mean) / self.std
+        data_clipped = np.clip(data, -self.threshold, self.threshold)
+        return (data_clipped - self.mean) / self.std
 
 
 if __name__ == "__main__":
